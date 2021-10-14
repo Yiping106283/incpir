@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 // Batched addition begin (adding a single batch)
 
     /* Set up data objects to be added */
-    int nbr_add = 0.01 * db_size;   // number of additions (i.e., batch size) = 1% of database size
+    int nbr_add = 0.05 * db_size;   // number of additions (i.e., batch size) = 1% of database size
 
     // assign random value to items to be added
     std::vector<Block> v(nbr_add);

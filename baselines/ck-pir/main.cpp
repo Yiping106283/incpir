@@ -25,14 +25,6 @@ int main(int argc, char* argv[]) {
     // parms
     uint32_t lgn = 17; // database n = 2^lgn
 
-    // test Eval
-    /*uint8_t setkey[] = {0xab, 0x30, 0x0c, 0x91, 0xce, 0x4a, 0x1f, 0xdb,
-                        0xce, 0x4a, 0x2f, 0x1b, 0xc3, 0x5a, 0x9f, 0xbc};
-    for (int i = 0; i < 100; i++) {
-        uint32_t y = Eval(setkey, i, lgn, 70700);
-        if (y >= 70700) throw invalid_argument("range error in Eval");
-    }*/
-
     // test BreadthEval
 
     // test EvalPunc
@@ -52,7 +44,10 @@ int main(int argc, char* argv[]) {
     Database my_database(db_size);
     for (int i = 0; i < db_size; i++) {
         auto val = generateRandBlock();
+        // create enough non-zeros
         my_database[i] = val;
+        my_database[i] |= (my_database[i] << 100);
+        my_database[i] |= (my_database[i] << 100);
     }
 
     PIRClient client;
@@ -69,14 +64,16 @@ int main(int argc, char* argv[]) {
     OfflineQuery offline_qry = client.generate_offline_query();
     OfflineQuery offline_qry1 = deserialize_offline_query(serialize_offline_query(offline_qry));
 
-    cout << "offline query size: " << serialize_offline_query(offline_qry).size() << endl;
+    cout << "offline query size: " 
+      << double(serialize_offline_query(offline_qry).size())/double(1000) << " KB" << endl;
     assert(equal_offline_query(offline_qry1, offline_qry));
     cout << "client generate offline query done." << endl;
 
     auto server_offline_st = chrono::high_resolution_clock::now();
     OfflineReply offline_reply = server.generate_offline_reply_fast(offline_qry1, 1);
     OfflineReply offline_reply1 = deserialize_offline_reply(serialize_offline_reply(offline_reply));
-    cout << "offline reply size: " << serialize_offline_reply(offline_reply).size() << endl;
+    cout << "offline reply size: " 
+      << double(serialize_offline_reply(offline_reply).size())/double(1000) << " KB" << endl;
 
     assert(equal_offline_reply(offline_reply1, offline_reply1));
 
@@ -92,7 +89,8 @@ int main(int argc, char* argv[]) {
     uint32_t qry_idx = rand() % db_size;
     online_qry = client.generate_online_query(qry_idx);
     OnlineQuery online_qry1 = deserialize_online_query(serialize_online_query(online_qry));
-    cout << "online query size: " << serialize_online_query(online_qry).size() << endl;
+    cout << "online query size: " 
+      << double(serialize_online_query(online_qry).size()) / double(1000) << " KB" << endl;
     assert(equal_online_query(online_qry1, online_qry));
     cout << "client generate online query done."<< endl;
 
@@ -100,7 +98,8 @@ int main(int argc, char* argv[]) {
     OnlineReply online_reply = server.generate_online_reply(online_qry1, 1);
     OnlineReply online_reply1 = deserialize_online_reply(serialize_online_reply(online_reply));
     
-    cout << "online reply size: " << serialize_online_reply(online_reply).size() << endl;
+    cout << "online reply size: " 
+      << double(serialize_online_reply(online_reply).size()) / double(1000) << " KB" << endl;
 
     auto server_online_ed = chrono::high_resolution_clock::now();
     auto server_online_time = std::chrono::duration_cast<std::chrono::microseconds>
@@ -118,14 +117,16 @@ int main(int argc, char* argv[]) {
     
     OnlineQuery refresh_query = client.generate_refresh_query(qry_idx); 
 
-    cout << "refresh query size: " << serialize_online_query(refresh_query).size() << endl;
+    cout << "refresh query size: " 
+      << double(serialize_online_query(refresh_query).size()) / double(1000) << " KB" << endl;
 
     auto server_refresh_st = chrono::high_resolution_clock::now();
     OnlineReply refresh_reply = server.generate_online_reply(refresh_query, 1);
     auto server_refresh_ed = chrono::high_resolution_clock::now();
     auto server_refresh_time = std::chrono::duration_cast<std::chrono::microseconds>
             (server_refresh_ed - server_refresh_st).count();
-    cout << "refresh reply size: " << serialize_online_reply(refresh_reply).size() << endl;
+    cout << "refresh reply size: " 
+      << double(serialize_online_reply(refresh_reply).size()) / double(1000) << " KB" << endl;
     cout << "server generate refresh reply done in " << server_refresh_time << " microsec." << endl;
 
 

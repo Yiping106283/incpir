@@ -55,7 +55,8 @@ int main(int argc, char** argv) {
     ClientQuery query1 = deserialize_query(serialize_query(query));
     assert(equal_query(query, query1));
 
-    cout << "client query size: " << serialize_query(query).size() << endl;
+    cout << "client query size: "
+       << double(serialize_query(query).size())/double(1000) << " KB" << endl;
 
     auto qry_ed = chrono::high_resolution_clock::now();
     auto qry_time = chrono::duration_cast<chrono::microseconds>
@@ -70,7 +71,7 @@ int main(int argc, char** argv) {
     ServerReply right_reply = server.generate_right_reply(query1.right_query);
 
     string msg = serialize_reply(left_reply, right_reply);
-    cout << "reply size: " << msg.size() << endl;
+    // cout << "reply size: " << msg.size() << endl;
     ServerReply l, r;
     deserialize_reply(msg, l, r);
 

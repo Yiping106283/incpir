@@ -289,7 +289,7 @@ ClientQuery deserialize_query(string msg) {
         //q.left_query.push_back((uint8_t)(query.left_query()[i]));
     }
 
-    cout << "deserial: left query size " << q.left_query.size() << endl;
+    // cout << "deserial: left query size " << q.left_query.size() << endl;
 
     for (int i = 0; i < query.right_query_size(); i++) {
 
@@ -336,7 +336,7 @@ ClientQuery deserialize_query(string msg) {
         //q.right_query.push_back((uint8_t)(query.right_query()[i]));
     }
 
-    cout << "deserial: right query size " << q.right_query.size() << endl;
+    // cout << "deserial: right query size " << q.right_query.size() << endl;
 
     return q;
 }

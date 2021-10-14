@@ -19,7 +19,7 @@ We did experiments on CloudLab, but it can also be run locally on a linux machin
 
 #### Microbenchmark (Figure 7)
 
-In folder `microbench`, run the script `run.sh`. It will produce each column in the table.
+In folder `incremental-pir`, run the script `run.sh`. It will produce each column in the table.
 
 
 #### Throughput and latency (Figure 8a and 8b)
@@ -79,7 +79,6 @@ To test DPF-PIR, in folder `baselines/dpf-pir`, run
 These are figures for communication in online and offline (preprocessing or hint updates) phases.
 
 In folder `netbench/figs`, run the script `run.sh`. See figures in `netbench/figs`. 
-
 
 
 #### Tor trace simulation (Figure 10a and 10b)

@@ -50,7 +50,7 @@ ax1.plot(x, perstore_c, color='thistle',
 
 ax1.legend(loc='upper center', bbox_to_anchor=(0.2,0.9), framealpha=0, prop={'family':'Times New Roman', 'size': 24})
 
-plt.text(6, 9,'#queries between updates', fontfamily='Times New Roman', fontsize=26)
+plt.text(6, 9,'#Queries between updates', fontfamily='Times New Roman', fontsize=26)
 
 plt.grid(True, 'major', 'y', ls='--', lw=.5, c='k', alpha=.3)
 

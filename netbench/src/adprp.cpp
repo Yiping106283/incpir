@@ -7,58 +7,6 @@
 #include <iostream>
 #include <string>
 
-// TODO too slow
-uint32_t adprf(uint32_t range, uint8_t *key, uint32_t x) {
-
-    auto bitlen = uint32_t(ceil(log2(range)));
-
-    uint8_t *plaintext;
-    plaintext = static_cast<uint8_t *>(malloc(16));
-    memset(plaintext, 0, 16);
-
-    // copy uint32_t value to plaintext slot
-    for (int i = 0; i < 4; i++) {
-        plaintext[i] = uint8_t((0xFF<<(8*i) & x)>>(8*i));
-    }
-
-    int outlen;
-    uint8_t outbuf[16];
-
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_init(ctx);
-    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, NULL);
-
-    EVP_EncryptUpdate(ctx, outbuf, &outlen, plaintext, 16);
-
-    // result now in outbuf
-    // find a correct range using sliding window
-
-
-    // only copy 8 bytes might be enough
-    unsigned long long v = 0;
-
-    for ( unsigned ui = 0 ; ui < 8 ; ++ui ) {
-        v <<= 8;
-        auto tmp = (unsigned long) outbuf[ui];
-        //td::bitset<64> bTmp { (unsigned long) outbuf[ui] };
-
-        v |= tmp;
-    }
-
-    uint32_t res = 0;
-
-    for (uint32_t i = 0; i < 64; i++) {
-        unsigned long long slide = (((1<<bitlen)-1) << i);
-        if (((v & slide) >> i) < range) {
-            res = uint32_t(((v & slide) >> i));
-            break;
-        }
-    }
-
-    return res;
-
-}
-
 uint32_t small_prf(uint32_t in_bits, uint32_t out_bits,
                 uint8_t  *key, uint32_t x) {
 
@@ -85,12 +33,12 @@ uint32_t small_prf(uint32_t in_bits, uint32_t out_bits,
 
     // turn outbuf to uint32_t
     uint32_t res = 0;
-    //for (int i = 0; i < 4; i++) {
-    //    res <<= 8;
-    //    res ^= outbuf[i];
-    //}
+    for (int i = 0; i < 4; i++) {
+       res <<= 8;
+       res ^= outbuf[i];
+    }
 
-    //res = res & ((1<<out_bits) - 1);
+    res = res & ((1<<out_bits) - 1);
 
     return res;
 }

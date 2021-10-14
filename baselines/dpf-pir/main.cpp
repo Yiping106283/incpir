@@ -42,7 +42,6 @@ int main(int argc, char** argv) {
         //hashdatastore::hash_type answerB = store.answer_pir2(bbbb);
         //hashdatastore::hash_type answer = _mm256_xor_si256(answerA, answerB);
         auto time4 = std::chrono::high_resolution_clock::now();
-        //std::cout << _mm256_extract_epi64(answer, 0) << std::endl;
 
         buildT += time2 - time1;
         evalT += time3 - time2;

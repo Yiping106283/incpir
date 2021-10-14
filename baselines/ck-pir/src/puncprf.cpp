@@ -16,7 +16,6 @@ void print_key(uint8_t *key) {
     printf("\n");
 }
 
-// Single-AES call PRG
 
 void NewCopyKey(Key &key, uint8_t *ptr) {
 
@@ -66,8 +65,6 @@ vector<uint32_t> BreadthEval(uint8_t *rootkey, int low, int high,
 
     vector<Key> cur_nodes;
 
-    //cout << "prev_node size = " << prev_nodes.size() << endl;
-
     Key keyb;
 
     for (int i = subheight; i < lgn; i++) {
@@ -96,23 +93,10 @@ vector<uint32_t> BreadthEval(uint8_t *rootkey, int low, int high,
 
     }
 
-    /*if (prev_nodes.size() != (1<<(lgn/2))) {
-        cout << (1<<(lgn/2)) << endl;
-        cout << prev_nodes.size() << endl;
-        throw invalid_argument("fast eval results err");
-    }*/
-
     // output eval results in prev_nodes;
 
     for (int i = 0; i < vec.size(); i++) {
         uint32_t res = 0;
-
-        /*for (int pos = 0; pos < 4; pos++) {
-            res <<= 8;
-
-            res |= prev_nodes[i][pos];
-        }
-        res &= ((1<<lgn)-1);*/
 
         unsigned long long v = 0;
 
@@ -132,14 +116,10 @@ vector<uint32_t> BreadthEval(uint8_t *rootkey, int low, int high,
         vec[i] = res;
     }
 
-
-    //free(subroot);
-
     return vec;
 }
 
 
-// TODO optimize Eval
 tuple<Key, Key> PRG (Key stkey) {
 
     uint8_t *plaintext;
@@ -147,7 +127,6 @@ tuple<Key, Key> PRG (Key stkey) {
     for (int i = 0; i < KeyLen; i++) {
         plaintext[i] = stkey[i];
     }
-    //memcpy(plaintext, key, KeyLen);
 
     int outlen;
     uint8_t outbuf[KeyLen];
@@ -179,23 +158,13 @@ uint32_t Eval (uint8_t *key, uint32_t x, uint32_t lgn, uint32_t range) {
 
     // extract bits in x, and decide whether go left or right
 
-    //uint8_t *node_key = static_cast<uint8_t *>(malloc(KeyLen));
-    //memset(node_key, 0, KeyLen);
-
     Key node_key;
     for (int i = 0; i < KeyLen; i++) {
         node_key[i] = key[i];
     }
 
-    //memcpy(node_key, key, KeyLen);
-
-   /* cout << "check memcpy:" << endl;
-    print_key(key);
-    print_key(node_key);*/
-
     for (int i = 1; i <= lgn; i++) {
         int cur_bit = (x>>(lgn-i) & 1);
-        //cout << cur_bit ;
 
         if (cur_bit != 0 && cur_bit != 1)
             throw invalid_argument("error");
@@ -204,12 +173,10 @@ uint32_t Eval (uint8_t *key, uint32_t x, uint32_t lgn, uint32_t range) {
 
         if (cur_bit == 0) {
             // go left, get left pseudorandom label
-            //memcpy(node_key, get<0>(derived_keys), KeyLen);
             node_key = get<0>(derived_keys);
 
         } else {
             // go right, get right pseudorandom label
-            //memcpy(node_key, get<1>(derived_keys), KeyLen);
             node_key = get<1>(derived_keys);
         }
     }
@@ -220,8 +187,6 @@ uint32_t Eval (uint8_t *key, uint32_t x, uint32_t lgn, uint32_t range) {
     for ( unsigned ui = 0 ; ui < 8 ; ++ui ) {
         v <<= 8;
         auto tmp = (unsigned long) node_key[ui];
-        //td::bitset<64> bTmp { (unsigned long) outbuf[ui] };
-
         v |= tmp;
     }
 
@@ -255,7 +220,6 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 
     // we know what point is punctured given punc_keys
     uint32_t punc_point = punc_keys.bitvec;
-    //cout << "punc point = " << punc_point << endl;
 
     if (x == punc_keys.bitvec) {
         return -1; // input point being punctured, can't be evaluated
@@ -282,9 +246,6 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 
             memcpy(cur_key, punc_keys.keys[i-1], KeyLen);
 
-            /*cout << "EvalPunc: level " << i << ": ";
-            print_key(cur_key);*/
-
             break;
         }
 
@@ -294,16 +255,10 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 
     // let the cur_key be the "root" key and eval the rest bits of x
 
-    //uint8_t *node_key = static_cast<uint8_t *>(malloc(KeyLen));
-    //memset(node_key, 0, KeyLen);
-
     Key node_key;
     for (int i = 0; i < KeyLen; i++){
         node_key[i] = cur_key[i];
     }
-
-    //memcpy(node_key, cur_key, KeyLen);
-
 
     for (int i = cur_pos+1; i <= lgn; i++) {
 
@@ -314,19 +269,12 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 
         tuple<Key, Key> derived_keys = PRG(node_key);
 
-        /*cout << "check derived keys: " ;
-        print_key(get<0>(derived_keys));
-        cout << "cur_bit = " << cur_bit << endl;*/
-
         if (cur_bit == 0) {
             // go left, get left pseudorandom label
-            //memcpy(node_key, get<0>(derived_keys), KeyLen);
-
             node_key = get<0>(derived_keys);
 
         } else {
             // go right, get right pseudorandom label
-            //memcpy(node_key, get<1>(derived_keys), KeyLen);
             node_key = get<1>(derived_keys);
         }
     }
@@ -378,14 +326,10 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
 
     punckeys.height = lgn;
 
-    //uint8_t *node_key = static_cast<uint8_t *>(malloc(KeyLen));
-    //memset(node_key, 0, KeyLen);
     Key node_key;
     for (int i = 0; i < KeyLen; i++) {
         node_key[i] = key[i];
     }
-
-    //memcpy(node_key, key, KeyLen);
 
     for (int i = 1; i <= lgn; i++) {
         // for each level, derive punc keys
@@ -405,7 +349,6 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
 
             // go to right tree
             // i.e., set node_key to right_key
-            //memcpy(node_key, get<1>(derived_keys), KeyLen);
             node_key = get<1>(derived_keys);
 
             // going left is puncturing the right point
@@ -424,17 +367,10 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
             punckeys.keys.push_back(dright);
 
             // go to left tree, set node_key to left_key
-            //memcpy(node_key, get<0>(derived_keys), KeyLen);
             node_key = get<0>(derived_keys);
 
         }
-
     }
-
-//    free(node_key);
-
-    // y size = " << punckeys.keys.size() << endl;
-
     return punckeys;
 }
 

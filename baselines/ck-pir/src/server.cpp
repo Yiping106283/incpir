@@ -97,31 +97,22 @@ OnlineReply PIRServer::generate_online_reply(OnlineQuery online_qry, uint32_t cl
 
     OnlineReply tmp;
 
-    // TODO
-    // EvalPunc
-
     PuncKeys punckeys;
     punckeys.height = online_qry.height;
     punckeys.bitvec = online_qry.bitvec;
     punckeys.keys = online_qry.keys;
 
-
-    int count = 0;
-    // cout << "\tlgn: " << lgn << endl;
     for (int i = 0; i < (1<<(lgn/2)); i++) {
         int y = EvalPunc(punckeys, i, lgn, db_size);
-        //cout << y << " ";
-        if (y == -1) {
-            count++;
+        
+        if (y == -1) 
             continue;
-        }
-
+        
         y = (y + online_qry.shift) % db_size;
 
         tmp.parity = tmp.parity ^ ((*db)[y]);
     }
 
-    //cout << "\tcount: " << count << endl;
     return tmp;
 }
 

@@ -42,12 +42,12 @@ int main(int argc, char** argv) {
     }
     dbptr = &store;
 
-    /* setup client and server (actually two servers) */
+    // setup client and server (actually two servers)
     PIRClient client(lgn);
     PIRServer server(lgn, dbptr);
 
-    /* client generates query */
-    int qry_idx = rand() % 8000;
+    // client generates query
+    int qry_idx = rand() % (1ULL << lgn);
     auto qry_st = chrono::high_resolution_clock::now();
 
     ClientQuery query = client.generate_query(qry_idx);
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     cout << "client query generated in " << qry_time << " microsec." << endl;
 
 
-    /* server generates reply */
+    // server generates reply 
     auto st = chrono::high_resolution_clock::now();
 
     ServerReply left_reply = server.generate_left_reply(query1.left_query);
@@ -75,18 +75,7 @@ int main(int argc, char** argv) {
     ServerReply l, r;
     deserialize_reply(msg, l, r);
 
-    // TODO
-    // auto ed = chrono::high_resolution_clock::now();
-    // auto server_time = chrono::duration_cast<chrono::microseconds>
-    //         (ed-st).count();
-    // cout << "server reply generated in " << server_time << " microsec." << endl;
-
-    // cout << "vec reply size = " << left_reply.size() << endl;
-
     hashdatastore::hash_type left_hash_reply, right_hash_reply;
-
-    // vector<uint32_t> left_vec(left_reply.begin(), left_reply.begin()+8);
-    // vector<uint32_t> right_vec(right_reply.begin(), right_reply.begin()+8);
 
     vector<uint32_t> left_vec(l.begin(), l.begin()+8);
     vector<uint32_t> right_vec(r.begin(), r.begin()+8);
@@ -94,12 +83,8 @@ int main(int argc, char** argv) {
     left_hash_reply = uint32_to_hash(left_vec);
     right_hash_reply = uint32_to_hash(right_vec);
 
-    /* client recovers the block */
-
-    // TODO
+    // client recovers the block 
     hashdatastore::hash_type answer = _mm256_xor_si256(left_hash_reply, right_hash_reply);
-
-    // hashdatastore::hash_type answer = _mm256_xor_si256(l.reply, r.reply);
 
     if (_mm256_extract_epi64(answer, 0) == qry_idx) {
         cout << "PIR answer correct\n";

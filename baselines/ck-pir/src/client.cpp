@@ -20,10 +20,6 @@ void PIRClient::set_parms(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets
     nbrsets = nbrsets_;
 
     punc_x = 0;
-    /*if (setsize != (1<<(lgn/2))) {
-        cout << setsize << " " << (1<<(lgn/2))<< endl;
-        throw invalid_argument("set size not square root n!");
-    }*/
 
 }
 
@@ -129,8 +125,7 @@ OnlineQuery PIRClient::generate_refresh_query(uint32_t desired_idx) {
     uint32_t y = Eval(sets[setno].prf_key, r, lgn, dbrange);
     sets[setno].shift = (desired_idx + dbrange - y) % dbrange; // shift is positive number
 
-    // TODO probabilistic punc
-
+    // punc the set key (should be probabilistic!)
     PuncKeys punckeys = Punc(sets[setno].prf_key, punc_x, lgn);
 
     refresh_query.height = punckeys.height;
@@ -174,9 +169,7 @@ OnlineQuery PIRClient::generate_online_query(uint32_t desired_idx) {
     cur_qry_setno = setno;
 
 
-    // TODO: probabilistic
-
-    // punc the set key
+    // punc the set key (should be probabilistic!)
 
     PuncKeys punckeys = Punc(sets[setno].prf_key, punc_x, lgn);
 

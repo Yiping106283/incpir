@@ -37,11 +37,6 @@ typedef struct {
     uint32_t shift;
 } OnlineQuery;
 // actually PuncKeys
-// don't know why can't typedef OnlineQuery here
-
-//typedef struct {
-//    std::set<uint32_t> indices;
-//} RefreshQuery;
 
 typedef struct {
     uint32_t nbrsets;

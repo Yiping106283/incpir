@@ -2,12 +2,12 @@
 
 This repository contains the implementation for our paper "Incremental Offline/Online PIR", which will appear at USENIX Security 2022.
 
-## Code
+## Code organization
 
-- Implementation for incremental PIR protocol
-- Implementation for original CK PIR protocol
-- DPF-PIR baseline imported from C++ DPF-PIR library [https://github.com/dkales/dpf-cpp]
-- End-to-end implementation for latency/throughput testing 
+- Implementation for incremental PIR protocol (folder `incremental-pir`)
+- Implementation for original CK PIR protocol (folder  `baselines/ck-pir`)
+- DPF-PIR baseline imported from C++ DPF-PIR library (folder `baselines/dpf-pir`) [https://github.com/dkales/dpf-cpp]
+- End-to-end implementation for latency/throughput testing (folder `netbench` and `torsim`)
 
 
 ## Setup
@@ -21,16 +21,12 @@ We did experiments on CloudLab, but it can also be run locally on a linux machin
 
 In folder `microbench`, run the script `run.sh`. It will produce each column in the table.
 
-(Note that we have optimized for client-side code, some numbers in this AE version would be faster than depicted in the paper)
-
-
 
 #### Throughput and latency (Figure 8a and 8b)
 
 These are figures for the online phase (8a) and offline (preprocessing or hint updates) phase (8b).
 
 In folder `netbench/figs`, run the script `run.sh`. It includes the metadata we measured and you will get figures in `netbench/figs`. 
-
 
 
 To test functionality for incremental CK, run `./offline_server_eval` and `./offline_client_eval` on two machines with the following parameters:

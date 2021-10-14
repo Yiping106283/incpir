@@ -7,8 +7,6 @@
 
 #define ROUNDS 7
 
-uint32_t adprf(uint32_t range, uint8_t *key, uint32_t x);
-
 // small range PRF, compute PRF(key, x)
 uint32_t small_prf(uint32_t in_range, uint32_t out_range,
         uint8_t *key, uint32_t x);

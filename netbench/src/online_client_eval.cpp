@@ -72,12 +72,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < offer_load; i++) {
         thread t(&online_query, ref(client), ref(my_database), db_size, i, ref(query_res), ref(querys[i]), ip);
         t_vec.push_back(move(t));
-        // int qry_idx = rand() % db_size;
-        // query_idx[i] = qry_idx;
-        // OnlineQuery online_qry = client.generate_online_query(qry_idx);
-        // querys[i] = online_qry;
-        // online_query(clients[i], my_database, db_size, i, query_res,
-        // querys[i], ip);
         usleep(sleep_period);
     }
 
@@ -86,14 +80,6 @@ int main(int argc, char *argv[]) {
     }
     end = system_clock::now();
     cout << "time spent: " << duration_cast<std::chrono::duration<double>>(end - start).count() << endl;
-
-    // for (int i = 0; i < offer_load; i++) {
-    //     if (query_res[i] == my_database[query_idx[i]]) {
-    //         std::cout << "recover success! ID: " << query_idx[i] << std::endl;
-    //     } else {
-    //         std::cout << "recover fail! ID: " << query_idx[i] << std::endl;
-    //     }
-    // }
 
     double total_handle_time = 0.0;
     for (int i = 0; i < handle_time.size(); i++) {

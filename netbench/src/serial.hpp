@@ -160,7 +160,7 @@ string serialize_offline_query(OfflineQuery q) {
     query.set_setsize(q.setsize);
     query.set_keylen(q.keylen);
 
-    // TODO check change here
+    // check 
     // serialize offline keys, do not combine every 4 uint8 into uint32 for now
     assert(KeyLen % 4 == 0);
     for (int i = 0; i < q.offline_keys.size(); i++) {
@@ -179,17 +179,7 @@ string serialize_offline_query(OfflineQuery q) {
             //query.add_offline_keys((uint32_t)q.offline_keys[i][j]);
             query.add_offline_keys(tmp);
 
-            /*if (i == 0){
-                printf("serial:");
-                printf("%x ", tmp);
-            }*/
         }
-
-
-
-
-
-
 
     }
 
@@ -212,7 +202,7 @@ OfflineQuery deserialize_offline_query(string msg) {
     q.setsize = query.setsize();
     q.keylen = query.keylen();
 
-    // TODO check change here
+    // check 
     for (int i = 0; i < (query.offline_keys_size()*4/KeyLen); i++) {
         Key key;
 	uint32_t tmp;
@@ -226,13 +216,8 @@ OfflineQuery deserialize_offline_query(string msg) {
             key[4*j+2] = uint8_t((tmp>>8) & 0xFF);
             key[4*j+3] = uint8_t(tmp & 0xFF);
 
-            //key[j] = (uint8_t)query.offline_keys()[i*KeyLen+j];
         }
-
-       /* if (i == 0) {
-            printf("\n");
-            printf("%x %x %x %x\n", key[0], key[1], key[2], key[3]);
-        }*/
+ 
         q.offline_keys.push_back(key);
 
     }
@@ -293,19 +278,7 @@ string serialize_offline_add_query(OfflineAddQueryShort q) {
         }
     }
 
-    // TODO check change here
-    /*uint8_t* ptr = q.master_key;
-    for (int i = 0; i < 4; i++) {
-
-        uint32_t tmp = 0;
-        for (int b = 0; b < 4; b++) {
-            tmp <<= 8;
-            tmp |= uint8_t(*(ptr+b));
-        }
-        query.add_master_key(tmp);
-        ptr += 4;
-
-    }*/
+    // check 
 
     uint8_t* ptr = q.master_key;
     for (int i = 0; i < 16; i++) {
@@ -334,7 +307,7 @@ OfflineAddQueryShort deserialize_offline_add_query(string msg) {
         info.setno = query.req()[i].setno();
         info.shift = query.req()[i].shift();
 
-        // TODO check change here
+        // check 
         for (int j = 0; j < KeyLen/4; j++) {
             uint32_t tmp = query.req()[i].key()[j];
 
@@ -356,17 +329,7 @@ OfflineAddQueryShort deserialize_offline_add_query(string msg) {
         q.req.push_back(info);
     }
 
-    // TODO check change here
-    //cout << "master_key size = " << query.master_key_size() << endl;
-    /*assert(query.master_key_size() == 4);
-    q.master_key = (uint8_t*)malloc(KeyLen*sizeof(uint8_t));
-    uint8_t* ptr = q.master_key;
-    for (int i = 0; i < query.master_key_size(); i++) {
-        *(q.master_key+4*i) = (uint8_t)((query.master_key()[i]>>24) & 0xFF);
-        *(q.master_key+4*i+1) = (uint8_t)((query.master_key()[i]>>16) & 0xFF);
-        *(q.master_key+4*i+2) = (uint8_t)((query.master_key()[i]>>8) & 0xFF);
-        *(q.master_key+4*i+3) = (uint8_t)(query.master_key()[i] & 0xFF);
-    }*/
+    // check
     assert(query.master_key_size() == 16);
     q.master_key = (uint8_t*)malloc(16*sizeof(uint8_t));
     uint8_t* ptr = q.master_key;

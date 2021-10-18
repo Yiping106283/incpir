@@ -48,7 +48,7 @@ public:
         return blk;
     }
 
-    // TODO: refresh query
+    
     void refresh_query(string ip, OnlineQuery online_qry, double& total_time, Block& blk) {
         system_clock::time_point start, end;
         start = system_clock::now();
@@ -66,7 +66,7 @@ public:
         return;
     }
 
-    // TODO: add query
+   
     void add_query(string ip, OfflineAddQueryShort& offline_add_qry, double& total_time) {
         system_clock::time_point start, end;
         system_clock::time_point start_tmp, end_tmp;

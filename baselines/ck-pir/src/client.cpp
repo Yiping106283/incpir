@@ -23,7 +23,7 @@ void PIRClient::set_parms(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets
 
 }
 
-void find_valid_key(uint8_t *key, int lgn, uint32_t dbrange) {
+void find_valid_key(Key key, int lgn, uint32_t dbrange) {
 
     // find valid key without collisions
     set<uint32_t> tmp;
@@ -31,7 +31,11 @@ void find_valid_key(uint8_t *key, int lgn, uint32_t dbrange) {
     // loop at most 128
     int cnt;
     for(cnt = 0; cnt < 128; cnt++) {
-        RAND_bytes(key, KeyLen);
+        uint8_t *tmpk = static_cast<uint8_t *>(malloc(KeyLen));
+        RAND_bytes(tmpk, KeyLen);
+        for (int i = 0; i < KeyLen; i++) {
+            key[i] = tmpk[i];
+        }
 
         tmp.clear();
 
@@ -63,8 +67,12 @@ void PIRClient::generate_setkeys() {
 
         SetDesc tmp;
 
-        tmp.prf_key = static_cast<uint8_t *>(malloc(KeyLen));
-        memset(tmp.prf_key, 0, KeyLen);
+        // tmp.prf_key = static_cast<uint8_t *>(malloc(KeyLen));
+        // memset(tmp.prf_key, 0, KeyLen);
+        uint8_t *tmpkey = static_cast<uint8_t *>(malloc(KeyLen));
+        for (int ki = 0; ki < KeyLen; ki++) {
+            tmp.prf_key[ki] = tmpkey[ki];
+        }
 
         // re-gen key until valid
         find_valid_key(tmp.prf_key, lgn, dbrange);
@@ -89,9 +97,9 @@ OfflineQuery PIRClient::generate_offline_query() {
     tmp.setsize = setsize;
 
     for (int i = 0; i < nbrsets; i++) {
-        Key key;
-        CopyKey(key, sets[i].prf_key);
-        tmp.offline_keys.push_back(key);
+        //Key key;
+        //CopyKey(key, sets[i].prf_key);
+        tmp.offline_keys.push_back(sets[i].prf_key);
 
         tmp.shifts.push_back(sets[i].shift);
 
@@ -113,12 +121,16 @@ OnlineQuery PIRClient::generate_refresh_query(uint32_t desired_idx) {
     OnlineQuery refresh_query;
 
     // sample a new key
-    if (sets[setno].prf_key != NULL)
-        free(sets[setno].prf_key);
+    // if (sets[setno].prf_key != NULL)
+    //     free(sets[setno].prf_key);
 
     // generate new key
-    sets[setno].prf_key = static_cast<uint8_t *>(malloc(KeyLen));
-    RAND_bytes(sets[setno].prf_key, KeyLen);
+    uint8_t *tmp_prf_key = static_cast<uint8_t *>(malloc(KeyLen));
+    //sets[setno].prf_key = static_cast<uint8_t *>(malloc(KeyLen));
+    RAND_bytes(tmp_prf_key, KeyLen);
+    for (int i = 0; i < KeyLen; i++) {
+        sets[setno].prf_key[i] = tmp_prf_key[i];
+    }
 
     // add shift
     uint32_t r = rand() % setsize;
@@ -168,13 +180,22 @@ OnlineQuery PIRClient::generate_online_query(uint32_t desired_idx) {
 
     cur_qry_setno = setno;
 
+    cout << " ****** " << endl;
 
     // punc the set key (should be probabilistic!)
 
     PuncKeys punckeys = Punc(sets[setno].prf_key, punc_x, lgn);
 
+    cout << " after Punc ****** " << endl;
+
     online_query.height = punckeys.height;
     online_query.bitvec = punckeys.bitvec;
+
+    cout << "before copy" << endl;
+    // for (int i = 0; i < punckeys.keys.size(); i++) {
+    //     online_query.keys[i] = punckeys.keys[i];
+    // }
+    //  cout << "after copy" << endl;
     online_query.keys = punckeys.keys;
     online_query.shift = sets[setno].shift;
 

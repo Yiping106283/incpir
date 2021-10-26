@@ -27,7 +27,7 @@ void NewCopyKey(Key &key, uint8_t *ptr) {
 }
 
 // breadth-first Eval (obtain PRF(k, 1), ... , PRF(k, s) in one-shot)
-vector<uint32_t> BreadthEval(uint8_t *rootkey, int low, int high,
+vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
         uint32_t lgn, uint32_t range) {
     // low should be 0
     // high should be s (i.e., (1,,(lgn/2)))
@@ -151,7 +151,7 @@ tuple<Key, Key> PRG (Key stkey) {
 }
 
 // range must <= lgn
-uint32_t Eval (uint8_t *key, uint32_t x, uint32_t lgn, uint32_t range) {
+uint32_t Eval (Key key, uint32_t x, uint32_t lgn, uint32_t range) {
 
     if (x >= (1<<lgn))
         throw invalid_argument("Eval input invalid");
@@ -228,8 +228,10 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
     // parse x from lgn-1 bits, to 0 bits
     // determine the path
 
-    uint8_t *cur_key = static_cast<uint8_t *>(malloc(KeyLen));
-    memset(cur_key, 0, KeyLen);
+    // uint8_t *cur_key = static_cast<uint8_t *>(malloc(KeyLen));
+    // memset(cur_key, 0, KeyLen);
+
+    Key cur_key;
 
     int cur_pos = 1;
 
@@ -244,7 +246,10 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
             // then we take the current key
             // and eval (traverse down) the rest of the bits of x
 
-            memcpy(cur_key, punc_keys.keys[i-1], KeyLen);
+            // memcpy(cur_key, punc_keys.keys[i-1], KeyLen);
+            for (int ki = 0; ki < KeyLen; ki++) {
+                cur_key[ki] = punc_keys.keys[i-1][ki];
+            }
 
             break;
         }
@@ -278,7 +283,7 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
             node_key = get<1>(derived_keys);
         }
     }
-    free(cur_key);
+    // free(cur_key);
     // here we should get the pseudorandom label at leaf
 
     // use node_key to find lgn bits values in range
@@ -320,7 +325,7 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 
 
 // generate punturable keys
-PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
+PuncKeys Punc(Key key, uint32_t punc_x, uint32_t lgn) {
     uint32_t punc_number = punc_x;
     PuncKeys punckeys;
 
@@ -341,7 +346,8 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
             punc_number -= (1<<lgn)/(1<<i);
 
             // extract left node
-            uint8_t *dleft = static_cast<uint8_t *>(malloc(KeyLen));
+            //uint8_t *tmp_dleft = static_cast<uint8_t *>(malloc(KeyLen));
+            Key dleft;
             for (int kidx = 0; kidx < KeyLen; kidx++) {
                 dleft[kidx] = get<0>(derived_keys)[kidx];
             }
@@ -360,7 +366,8 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
             // punc_number remains the same
 
             // extract right node
-            uint8_t *dright = static_cast<uint8_t *>(malloc(KeyLen));
+            //uint8_t *dright = static_cast<uint8_t *>(malloc(KeyLen));
+            Key dright;
             for (int kidx = 0; kidx < KeyLen; kidx++) {
                 dright[kidx] = get<1>(derived_keys)[kidx];
             }
@@ -373,5 +380,4 @@ PuncKeys Punc(uint8_t *key, uint32_t punc_x, uint32_t lgn) {
     }
     return punckeys;
 }
-
 

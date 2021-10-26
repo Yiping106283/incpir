@@ -130,9 +130,8 @@ string serialize_online_query(OnlineQuery q) {
     
 
     for (int i = 0; i < q.keys.size(); i++) {
-        uint8_t* ptr = q.keys[i];
         for (int j = 0; j < KeyLen; j++) {
-            query.add_keys((uint32_t)(*(ptr+j)));
+            query.add_keys(q.keys[i][j]);
         }
     }
     query.set_shifts(q.shift);
@@ -153,11 +152,11 @@ OnlineQuery deserialize_online_query(string msg) {
     q.shift = query.shifts();
 
     for (int i = 0; i < query.keys_size() / KeyLen; i++) {
-        uint8_t* ptr = (uint8_t*) malloc(sizeof(uint8_t)*KeyLen);
+        array<uint8_t, KeyLen> k;
         for (int j = 0; j < KeyLen; j++) {
-            *(ptr+j) = ((uint8_t)query.keys()[i*KeyLen+j]);
+            k[j] = ((uint8_t)query.keys()[i*KeyLen+j]);
         }
-        q.keys.push_back(ptr);
+        q.keys.push_back(k);
     }
     return q;
 }
@@ -166,11 +165,10 @@ bool equal_online_query(OnlineQuery a, OnlineQuery b) {
     if (a.keys.size() != b.keys.size() || a.height != b.height || a.bitvec != b.bitvec || a.shift != b.shift)
         return false;
     for (int i = 0; i < a.keys.size(); i++) {
-        uint8_t* ptr1 = a.keys[i];
-        uint8_t* ptr2 = b.keys[i];
         for (int j = 0; j < KeyLen; j++) {
-            if ((*(ptr1+j)) != (*(ptr2+j))) {
+            if (a.keys[i][j] != b.keys[i][j]) {
                 cout << i << " " << j << endl;
+                cout << a.keys[i][j] << " " << b.keys[i][j] << endl;
                 return false;
             }
         }
@@ -273,12 +271,4 @@ string serializeQuery(string& query, interface::QueryType type) {
     string res;
     q.SerializeToString(&res);
     return res;
-}
-
-Block generateRandBlock() {
-    std::bitset<16000> blk; 
-    for (int i = 0; i < 16000; i++) {
-       blk[i] = rand() % 2; 
-    }
-    return blk;
 }

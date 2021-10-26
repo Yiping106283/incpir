@@ -14,9 +14,9 @@ typedef std::array<uint8_t, KeyLen> Key;
 typedef std::bitset<16000> Block;
 typedef std::vector<Block> Database;
 
-
 typedef struct {
-    uint8_t *prf_key;
+    //uint8_t *prf_key;
+    Key prf_key;
     uint32_t shift = 0;
 
     Block hint;
@@ -32,8 +32,8 @@ typedef struct {
 typedef struct {
     int height;
     uint32_t bitvec = 0; // starting from right most bit
-    std::vector<uint8_t *> keys;
-
+    //std::vector<uint8_t *> keys;
+    std::vector<Key> keys;
     uint32_t shift;
 } OnlineQuery;
 // actually PuncKeys
@@ -46,4 +46,9 @@ typedef struct {
 typedef struct {
     Block parity;
 } OnlineReply;
+
+Block generateRandBlock();
+
 #endif
+
+

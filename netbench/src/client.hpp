@@ -1,32 +1,44 @@
 #ifndef _CLIENT
 #define _CLIENT
 
+
 #include "pir.hpp"
 
 #include <stdint.h>
 #include <set>
 
+typedef vector<tuple<uint32_t, uint32_t> > LINFO;
+
 class PIRClient {
 public:
-    uint32_t dbrange;
+    uint32_t dbrange;         // up-to-date database size
     uint32_t setsize;
     uint32_t nbrsets;
+    LocalHints localhints;
 
-    uint8_t *master_key;
+    Key mk;                   // master key for kdf
 
-    int cur_qry_setno;
+    int cur_qry_idx;          // index for current query
+    int cur_qry_setno;        // set number for current query
+    Block cur_qry_blk;        // data block for current query
 
-    std::vector<SetDesc> sets;
-
-    PIRClient();
-
-    void set_parms(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_);
-    void generate_setkeys();
+    // setup params and generate set keys
+    PIRClient(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_);
 
     OfflineQuery generate_offline_query();
-    void update_local_hints(OfflineReply offline_reply);
 
     OnlineQuery generate_online_query(uint32_t desired_idx);
+
+    Block query_recov(OnlineReply online_reply);
+    void refresh_recov(OnlineReply refresh_reply);
+
+    // need to consider before and after add both
+    OnlineQuery generate_refresh_query(uint32_t desired_idx);
+
+    // updates: addition
+    UpdateQueryAdd batched_addition_query(uint32_t nbr_add);
+
+    void update_parity(OfflineReply offline_reply);
 
 
     //NewOnlineQuery query_easy(uint32_t desired_idx);
@@ -34,17 +46,7 @@ public:
 
     //NewOnlineQuery checklist_generate_online_query(uint32_t desired_idx);
 
-    Block recover_block(OnlineReply online_reply);
-
-    // additions
-    OfflineAddQueryLong incremental_addition_query(uint32_t prev_range, uint32_t nbr_add); // original dbsize, new elements
-    OfflineAddQueryShort batched_addition_query(uint32_t nbr_add);
-
-
-    // need to consider before and after add both
-    OnlineQuery generate_refresh_query(uint32_t desired_idx);
-
-
 };
 
 #endif
+

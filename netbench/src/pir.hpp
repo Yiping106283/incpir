@@ -3,97 +3,92 @@
 
 #include <vector>
 #include <bitset>
-#include <set>
-#include <array>
 #include <tuple>
-#include <cstring>
+#include <array>
 
 #define KeyLen 16
 
-typedef unsigned long long ulonglong;
+#define ONESEC 1000000
+#define ONEMS 1000
+#define ONEKB 8000
 
-typedef std::array<uint8_t, KeyLen> Key;
-typedef std::bitset<16000> Block;
-typedef std::vector<Block> Database;
+#define BlockLen 16000
 
+using namespace std;
 
-typedef struct {
-    uint8_t *prf_key;
-    uint32_t shift = 0;
+typedef array<uint8_t, KeyLen> Key;  // key length: 128 bits
 
-    // if prf_key for whole range, then linfo and sinfo size is zero
-
-    std::vector< std::tuple<uint32_t, uint32_t> > linfo; // store indices in the clear (addin, kickout)
-    std::vector< std::tuple<uint32_t, uint32_t> > sinfo; // store keys and tuple=(range, points)
-
-    Block hint;
-
-} SetDesc;
+typedef bitset<BlockLen> Block;
+typedef vector<Block> Database;
 
 typedef struct {
-    uint32_t nbrsets;
+    uint32_t dbrange;
     uint32_t setsize;
-    uint32_t keylen;
-    std::vector<Key> offline_keys;
-    std::vector<uint32_t> shifts;
+    uint32_t replica;
+    uint32_t nbrsets;
+} SetupParams;
 
-    // side info?
+typedef struct {
+    Key sk;                                    // set key
+    uint32_t shift;                            // shift for 1st range
+    vector<tuple<uint32_t, uint32_t> > aux;    // aux list
+} SetDesc;
+// 128 bits + 32 bits + 64 bits * aux.size
+
+typedef struct {
+    vector<SetDesc> sets;
+    vector<Block> parities;
+} LocalHints;
+
+typedef struct {
+    // each element in [sets] is a set description
+    // with key, shift, and aux
+    vector<SetDesc> sets;
 } OfflineQuery;
 
 typedef struct {
-    std::vector<uint32_t> indices;
-    //std::set<uint32_t> indices;
-} OnlineQuery;
-
-typedef struct {
-    std::set<uint32_t> left_indices;
-    uint32_t left_word;
-    std::set<uint32_t> right_indices;
-    uint32_t right_word;
-} NewOnlineQuery;
-
-typedef struct {
-    std::set<uint32_t> indices;
-} RefreshQuery;
-
-typedef struct {
-    uint32_t nbrsets;
-    std::vector<Block> hints;
+    std::vector<Block> parities;
 } OfflineReply;
+
+typedef struct {
+    std::vector<uint32_t> indices;
+} OnlineQuery;
 
 typedef struct {
     Block parity;
 } OnlineReply;
 
+// three update queries during offline phase
 typedef struct {
-    int setno;
+    Key sk;
     uint32_t shift;
-    Key key;
-    std::vector<std::tuple<uint32_t, uint32_t> > prev_side;
-    std::vector<std::tuple<uint32_t, uint32_t> > cur_side;
 
-    // cur_side should be one length longer than prev_side
-    // for each tuple in prev_side, Eval on points in (cur_side, prev_side]
-} DiffSideInfo;
+    // use two auxs, but the range list from one of them can be removed (since they are same)
+    // keep this for now, see if simplify later
+    vector<tuple<uint32_t, uint32_t> > aux_prev;
+    vector<tuple<uint32_t, uint32_t> > aux_curr;
+
+    // aux_curr should be one unit longer than aux_prev
+    // for each tuple in aux_prev, Eval on points in (t_curr, t_prev]
+} DiffSetDesc;
 
 typedef struct {
     uint32_t nbrsets;
     uint32_t setsize;
-
-    uint8_t *master_key;
-
-    std::vector<DiffSideInfo> req;
-
-} OfflineAddQueryShort;
+    Key mk;
+    vector<DiffSetDesc> diffsets;
+} UpdateQueryAdd;
 
 typedef struct {
-    std::vector<std::tuple<uint32_t, std::vector<std::tuple<uint32_t, uint32_t> > > > qry;
-    // setno, (3, n+1), (7, n+2), ...
-} OfflineAddQueryLong;
+    uint32_t nbrsets;
+    uint32_t setsize;
+} UpdateQueryEdit;
 
-uint8_t *derive_key(uint8_t *master_key, uint8_t *cset_key, int batch_no);
-uint8_t *test_derive_key(uint8_t *master_key, uint8_t *cset_key, int batch_no);
-void print_key(uint8_t *key);
+typedef struct {
+    uint32_t nbrsets;
+    uint32_t setsize;
+} UpdateQueryDelete;
 
+Key kdf(Key mk, Key sk, uint32_t batch_no);
 
 #endif

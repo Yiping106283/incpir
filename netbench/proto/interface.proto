@@ -11,35 +11,35 @@ message OnlineReply {
 }
 
 message OfflineReply {
-    required uint32 nbrsets = 1;
-    repeated uint64 hints = 2;
+    repeated uint64 parities = 1;
 }
 
 message OnlineQuery {
     repeated uint32 indices = 1;
 }
 
-message OfflineQuery {
-    required uint32 nbrsets = 1;
-    required uint32 setsize = 2;
-    required uint32 keylen = 3;
-    repeated uint32 offline_keys = 4;
-    repeated uint32 shifts = 5;
+message SetDesc {
+    repeated uint32 sk = 1;
+    required uint32 shift = 2;
+    repeated uint32 aux = 3;
 }
 
-message DiffSizeInfo {
-    required int32 setno = 1;
+message OfflineQuery {
+    repeated SetDesc sets = 1;
+}
+
+message DiffSetDesc {
+    repeated uint32 sk = 1;
     required uint32 shift = 2;
-    repeated uint32 key = 3;
-    repeated uint32 prev_side = 4;
-    repeated uint32 cur_side = 5;
+    repeated uint32 aux_prev = 3;
+    repeated uint32 aux_curr = 4;
 }
 
 message OfflineAddQueryShort {
     required uint32 nbrsets = 1;
     required uint32 setsize = 2;
-    repeated DiffSizeInfo req = 3; 
-    repeated uint32 master_key = 4;
+    repeated DiffSetDesc diffsets = 3; 
+    repeated uint32 mk = 4;
 }
 
 enum QueryType {

@@ -9,28 +9,29 @@
 
 class PIRServer {
 public:
-    uint32_t db_size;
+    uint32_t dbrange;
+    uint32_t setsize;
+    uint32_t nbrsets;
+
     Database *db = nullptr;
 
-    PIRServer();
+    PIRServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_);
 
-
-    void set_database(uint32_t db_size_, std::vector<Block> *db_);
+    void set_database(std::vector<Block> *db_);
 
     OfflineReply generate_offline_reply(OfflineQuery offline_qry, uint32_t client_id);
     OnlineReply generate_online_reply(OnlineQuery online_qry, uint32_t client_id);
 
     void add_elements(uint32_t nbr_add, std::vector<Block> v);
 
+    OfflineReply batched_addition_reply(UpdateQueryAdd offline_add_qry);
 
-    OfflineReply incremental_addition_reply(OfflineAddQueryLong offline_add_qry);
-    OfflineReply batched_addition_reply(OfflineAddQueryShort offline_add_qry);
+
 
     // sends back xor individually
-    Block delete_element(uint32_t idx);
-    Block edit_element(uint32_t idx, Block new_element);
+//    Block delete_element(uint32_t idx);
+//    Block edit_element(uint32_t idx, Block new_element);
 
 };
-
 
 #endif

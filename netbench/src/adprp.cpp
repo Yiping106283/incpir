@@ -5,78 +5,48 @@
 #include <cmath>
 #include <bitset>
 #include <iostream>
-#include <string>
-
-uint32_t small_prf(uint32_t in_bits, uint32_t out_bits,
-                uint8_t  *key, uint32_t x) {
-
-    if (in_bits != out_bits || x >= (1<<in_bits)) {
-        throw std::invalid_argument("small prf range error");
-    }
-
-    uint8_t *plaintext;
-    plaintext = static_cast<uint8_t *>(malloc(16));
-    memset(plaintext, 0, 16);
-    for (int i = 0; i < 4; i++) {
-        plaintext[i] = uint8_t((0xFF<<(8*i) & x)>>(8*i));
-    }
-
-    int outlen;
-    uint8_t outbuf[16];
-
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_init(ctx);
-    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, NULL);
-
-    EVP_EncryptUpdate(ctx, outbuf, &outlen, plaintext, 16);
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
-    // turn outbuf to uint32_t
-    uint32_t res = 0;
-    for (int i = 0; i < 4; i++) {
-       res <<= 8;
-       res ^= outbuf[i];
-    }
-
-    res = res & ((1<<out_bits) - 1);
-
-    return res;
-}
-
-
-
-uint32_t round_function(uint16_t block, uint8_t *key, uint16_t tweak,
-                        uint32_t input_length, uint32_t output_length) {
-
-    // TODO: after change to uint32_t, related things should be changed
+uint32_t round_func(uint16_t block, Key key, uint16_t tweak,
+                    uint32_t input_length, uint32_t output_length) {
 
     block = block ^ tweak;
 
+    uint8_t *keyptr;
+    keyptr = static_cast<uint8_t *>(malloc(KeyLen));
+    memset(keyptr, 0, KeyLen);
+    for (int i = 0; i < KeyLen; i++)
+        keyptr[i] = key[i];
+
+
     uint8_t *plaintext;
-    plaintext = static_cast<uint8_t *>(malloc(16));
-    memset(plaintext, 0, 16);
-    plaintext[14] = (uint8_t) ((block>>8) & 0xFF);
-    plaintext[15] = (uint8_t) (block & 0xFF);
+    plaintext = static_cast<uint8_t *>(malloc(KeyLen));
+    memset(plaintext, 0, KeyLen);
+
+    plaintext[KeyLen-2] = (uint8_t) ((block>>8) & 0xFF);
+    plaintext[KeyLen-1] = (uint8_t) (block & 0xFF);
 
     int outlen;
     uint8_t outbuf[16];
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(ctx);
-    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, NULL);
+    EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, keyptr, NULL);
 
-    EVP_EncryptUpdate(ctx, outbuf, &outlen, plaintext, 16);
+    EVP_EncryptUpdate(ctx, outbuf, &outlen, plaintext, KeyLen);
 
-    uint32_t res = outbuf[14];
+    uint32_t res = outbuf[KeyLen-2];
     res = res << 8;
-    res = res | outbuf[15];
+    res = res | outbuf[KeyLen-1];
     res = res & ((1<<output_length)-1);
 
     free(plaintext);
-    if (ctx != NULL) EVP_CIPHER_CTX_free(ctx);
+    EVP_CIPHER_CTX_free(ctx);
 
     return res;
-
 }
 
 
@@ -88,16 +58,14 @@ uint32_t round_function(uint16_t block, uint8_t *key, uint16_t tweak,
  * @return
  */
 uint32_t feistel_prp(uint32_t block, uint32_t block_length,
-        uint32_t rounds, uint8_t *keys) {
+                     uint32_t rounds, Key key) {
 
-    uint32_t left_length = block_length/2;
+    uint32_t left_length = block_length / 2;
     uint32_t right_length =  block_length - left_length;
 
     // split left and right
-
     uint32_t left = (block>>right_length) & ((1<<left_length)-1);
     uint32_t right = ((1<<right_length)-1) & block;
-
 
     uint32_t left1, right1;
     uint32_t perm_block;
@@ -105,35 +73,30 @@ uint32_t feistel_prp(uint32_t block, uint32_t block_length,
     for (int i = 0; i < rounds; i++) {
 
         left1 = right;
-        right1 = left ^ round_function(right, keys, i+1, right_length, left_length);
+        right1 = left ^ round_func(right, key, i+1, right_length, left_length);
 
         // concat left and right
 
         // re-assign left and right
 
         if (i == rounds - 1) {
-
             perm_block = (left1<<left_length) | right1;
-
         } else {
-
             perm_block = (left1<<left_length) | right1;
 
             left = perm_block>>right_length & ((1<<left_length)-1);
             right = perm_block & ((1<<right_length )- 1);
-
         }
     }
-
 
     return perm_block;
 }
 
 
 uint32_t feistel_inv_prp(uint32_t perm_block, uint32_t block_length,
-        uint32_t rounds, uint8_t *keys) {
+                         uint32_t rounds, Key key) {
 
-    uint32_t right_length = block_length/2;
+    uint32_t right_length = block_length / 2;
     uint32_t left_length = block_length - right_length;
 
     uint32_t right = perm_block & ((1<<right_length)-1);
@@ -145,10 +108,9 @@ uint32_t feistel_inv_prp(uint32_t perm_block, uint32_t block_length,
     for (int i = 0; i < rounds; i++) {
 
         right1 = left;
-        left1 = right ^ round_function(left, keys, rounds-i, left_length, right_length);
+        left1 = right ^ round_func(left, key, rounds-i, left_length, right_length);
 
         if (i == rounds - 1) {
-
             block = (left1<<left_length) | right1;
 
         } else {
@@ -156,14 +118,14 @@ uint32_t feistel_inv_prp(uint32_t perm_block, uint32_t block_length,
 
             left = (block>>right_length) & ((1<<left_length)-1);
             right = block & ((1<<right_length)-1);
-
         }
     }
 
     return block;
 }
 
-uint32_t cycle_walk(uint32_t num, uint32_t range, uint8_t *key) {
+
+uint32_t cycle_walk(uint32_t num, uint32_t range, Key key) {
 
     if (num >= range) {
         std::cout << "error:" << num << " , " << range << std::endl;
@@ -182,7 +144,8 @@ uint32_t cycle_walk(uint32_t num, uint32_t range, uint8_t *key) {
     return tmp;
 }
 
-uint32_t inv_cycle_walk(uint32_t num, uint32_t range, uint8_t *key) {
+
+uint32_t inv_cycle_walk(uint32_t num, uint32_t range, Key key) {
 
     if (num >= range) {
         std::cout << "error:" << num << " , " << range << std::endl;

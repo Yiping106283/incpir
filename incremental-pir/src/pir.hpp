@@ -12,7 +12,7 @@
 #define ONEMS 1000
 #define ONEKB 8000
 
-#define BlockLen 256
+#define BlockLen 16000
 
 using namespace std;
 

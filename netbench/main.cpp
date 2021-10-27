@@ -49,20 +49,22 @@ int main(int argc, char *argv[]) {
     std::random_device rd;
     Database my_database(db_size);
     for (int i = 0; i < db_size; i++) {
-        auto val = generateRandBlock();
+        auto val = rd() % 1000000;
         my_database[i] = val;
+        // create enough non-zeros
+        my_database[i] |=  (my_database[i] << 100);
     }
 
 // Offline phase begin
 
     /* Setup client */
-    PIRClient client;
+    PIRClient client(db_size, set_size, nbr_sets);
 
-    /* Client set params */
-    client.set_parms(db_size, set_size, nbr_sets);
+    // /* Client set params */
+    // client.set_parms(db_size, set_size, nbr_sets);
 
-    /* Client generate set keys (locally stored) */
-    client.generate_setkeys();
+    // /* Client generate set keys (locally stored) */
+    // client.generate_setkeys();
 
     /* Client generate offline query for fetching hints (preprocessed info) */
     OfflineQuery offline_qry = client.generate_offline_query();
@@ -72,10 +74,10 @@ int main(int argc, char *argv[]) {
       << double(serialize_offline_query(offline_qry).size()) / double(1000) << " KB" << endl;
 
     /* Setup server */
-    PIRServer server;
+    PIRServer server(db_size, set_size, nbr_sets);
 
     /* Server setup database */
-    server.set_database(db_size, &my_database);
+    server.set_database(&my_database);
     //std::cout << "server database set." << std::endl;
 
 
@@ -95,7 +97,7 @@ int main(int argc, char *argv[]) {
       << double(serialize_offline_reply(offline_reply).size()) / double(1000) << " KB" << endl;
 
     /* Offline client hint: client locally stores hints */
-    client.update_local_hints(offline_reply);
+    client.update_parity(offline_reply);
 
 // Offline phase end
 
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
     OnlineReply online_reply1 = deserialize_online_reply(serialize_online_reply(online_reply));
 
     /* Client recover data block */
-    Block blk = client.recover_block(online_reply1);
+    Block blk = client.query_recov(online_reply1);
 
     if (blk == my_database[qry_idx]) {
         std::cout << "recover success!" << std::endl;
@@ -140,7 +142,8 @@ int main(int argc, char *argv[]) {
     cout << "refresh reply size: " 
       << double(serialize_online_reply(refresh_reply).size()) / double(1000) << " KB" << endl;
 
-    client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
+    client.refresh_recov(refresh_reply);
+    // client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
 
     // incorporate Checklist refresh if possible later
 
@@ -165,7 +168,7 @@ int main(int argc, char *argv[]) {
     // TODO: we probably can omit this in testing?
 
     /* Client generates batched addition query */
-    OfflineAddQueryShort offline_add_qry = client.batched_addition_query(nbr_add);
+    UpdateQueryAdd offline_add_qry = client.batched_addition_query(nbr_add);
     cout << "client add query generated." << endl;
 
     assert(equal_offline_add_query(offline_add_qry, deserialize_offline_add_query(serialize_offline_add_query(offline_add_qry))));
@@ -173,7 +176,7 @@ int main(int argc, char *argv[]) {
       << double(serialize_offline_add_query(offline_add_qry).size()) / double(1000) << " KB" << endl;
 
     /* Server generates batched addition reply */
-    OfflineAddQueryShort offline_add_qry1 = deserialize_offline_add_query(serialize_offline_add_query(offline_add_qry));
+    UpdateQueryAdd offline_add_qry1 = deserialize_offline_add_query(serialize_offline_add_query(offline_add_qry));
     OfflineReply offline_add_reply = server.batched_addition_reply(offline_add_qry1);
 
     OfflineReply offline_add_reply1 = deserialize_offline_reply(serialize_offline_reply(offline_add_reply));
@@ -182,7 +185,7 @@ int main(int argc, char *argv[]) {
       << double(serialize_offline_reply(offline_add_reply).size()) / double(1000) << " KB" << endl;
 
     /* Client update local hints after one batched addition */
-    client.update_local_hints(offline_add_reply1);
+    client.update_parity(offline_add_reply1);
 
 // Batched addition end
 
@@ -198,7 +201,7 @@ int main(int argc, char *argv[]) {
     online_reply = server.generate_online_reply(online_qry, 1);
 
     /* Client recovers block */
-    blk = client.recover_block(online_reply);
+    blk = client.query_recov(online_reply);
     if (blk == my_database[qry_idx])
         std::cout << "success!" << std::endl;
     else std::cout << "fail!" << std::endl;
@@ -207,7 +210,8 @@ int main(int argc, char *argv[]) {
     /* Client refresh */
     refresh_query = client.generate_refresh_query(qry_idx);
     refresh_reply = server.generate_online_reply(refresh_query, 1);
-    client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
+    // client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
+    client.refresh_recov(refresh_reply);
 
 // Test end
 

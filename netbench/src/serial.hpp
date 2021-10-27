@@ -63,10 +63,9 @@ bool equal_online_reply(OnlineReply a, OnlineReply b) {
 string serialize_offline_reply(OfflineReply reply) {
     string res;
     interface::OfflineReply r;
-    r.set_nbrsets(reply.nbrsets);
     chrono::system_clock::time_point start, end;
-    for (int i = 0; i < reply.hints.size(); i++) {
-        Block blk = reply.hints[i];
+    for (int i = 0; i < reply.parities.size(); i++) {
+        Block blk = reply.parities[i];
         for (int j = 0; j < 16000/64; j++) {
             uint64_t result = 0;
             uint64_t mask = 1;
@@ -75,7 +74,7 @@ string serialize_offline_reply(OfflineReply reply) {
                     result |= mask;
                 mask <<= 1;
             }
-            r.add_hints(result);
+            r.add_parities(result);
         }
     }
     r.SerializeToString(&res);
@@ -89,11 +88,10 @@ OfflineReply deserialize_offline_reply(string msg) {
         assert(0);
     }
     OfflineReply reply;
-    reply.nbrsets = r.nbrsets();
-    for (int i = 0; i < r.hints_size()/(16000/64); i++) {
+    for (int i = 0; i < r.parities_size()/(16000/64); i++) {
         bitset<16000> bitsets(0);
         for (int j = 0; j < 16000/64; j++) {
-            uint64_t val = r.hints()[i*(16000/64)+j];
+            uint64_t val = r.parities()[i*(16000/64)+j];
             uint64_t mask = 1;
             for (int k = j*64; k < (j+1)*64; k++) {
                 if ((val&mask) != 0)
@@ -103,18 +101,18 @@ OfflineReply deserialize_offline_reply(string msg) {
                 mask <<= 1;
             }
         }
-        reply.hints.push_back(bitsets);
+        reply.parities.push_back(bitsets);
     }
     return reply;
 }
 
 bool equal_offline_reply(OfflineReply a, OfflineReply b) {
-    if ((a.nbrsets != b.nbrsets) || (a.hints.size() != b.hints.size()))
+    if (a.parities.size() != b.parities.size())
         return false;
-    for (int i = 0; i < a.hints.size(); i++) {
-        if (a.hints[i] != b.hints[i]) {
-            // cout << a.hints[i] << endl;
-            // cout << b.hints[i] << endl;
+    for (int i = 0; i < a.parities.size(); i++) {
+        if (a.parities[i] != b.parities[i]) {
+            // cout << a.parities[i] << endl;
+            // cout << b.parities[i] << endl;
             return false;
         }
     }
@@ -156,35 +154,17 @@ bool equal_online_query(OnlineQuery a, OnlineQuery b) {
 
 string serialize_offline_query(OfflineQuery q) {
     interface::OfflineQuery query;
-    query.set_nbrsets(q.nbrsets);
-    query.set_setsize(q.setsize);
-    query.set_keylen(q.keylen);
-
     // check 
-    // serialize offline keys, do not combine every 4 uint8 into uint32 for now
-    assert(KeyLen % 4 == 0);
-    for (int i = 0; i < q.offline_keys.size(); i++) {
-        // combine 4 keys (uint8_t each) to uint32_t
-
-        // for each key
-        uint32_t tmp;
-	for (int j = 0; j < KeyLen/4; j++) {
-            tmp = 0;
-
-            for (int b = 0; b < 4; b++) {
-                tmp <<= 8;
-                tmp |= q.offline_keys[i][4*j+b];
-            }
-
-            //query.add_offline_keys((uint32_t)q.offline_keys[i][j]);
-            query.add_offline_keys(tmp);
-
+    for (int i = 0; i < q.sets.size(); i++) {
+        interface::SetDesc* desc = query.add_sets();
+        for (int j = 0; j < KeyLen; j++) {
+            desc->add_sk(q.sets[i].sk[j]);
         }
-
-    }
-
-    for (int i = 0; i < q.shifts.size(); i++) {
-        query.add_shifts(q.shifts[i]);
+        desc->set_shift(q.sets[i].shift);
+        for (int j = 0; j < q.sets[i].aux.size(); j++) {
+            desc->add_aux(get<0>(q.sets[i].aux[j]));
+            desc->add_aux(get<1>(q.sets[i].aux[j]));
+        }
     }
     string res;
     query.SerializeToString(&res);
@@ -198,93 +178,72 @@ OfflineQuery deserialize_offline_query(string msg) {
         assert(0);
     }
     OfflineQuery q;
-    q.nbrsets = query.nbrsets();
-    q.setsize = query.setsize();
-    q.keylen = query.keylen();
 
     // check 
-    for (int i = 0; i < (query.offline_keys_size()*4/KeyLen); i++) {
-        Key key;
-	uint32_t tmp;
-        for (int j = 0; j < KeyLen/4; j++) {
-            // for each j, uint32_t
-            // parse to key
-
-            uint32_t tmp = query.offline_keys()[i*(KeyLen/4)+j];
-            key[4*j+0] = uint8_t((tmp>>24) & 0xFF);
-            key[4*j+1] = uint8_t((tmp>>16) & 0xFF);
-            key[4*j+2] = uint8_t((tmp>>8) & 0xFF);
-            key[4*j+3] = uint8_t(tmp & 0xFF);
-
+    for (int i = 0; i < query.sets_size(); i++) {
+        SetDesc desc;
+        for (int j = 0; j < KeyLen; j++) {
+            desc.sk[j] = query.sets(i).sk(j);
         }
- 
-        q.offline_keys.push_back(key);
-
-    }
-    // cout << q.offline_keys.size() << endl;
-
-    for (int i = 0; i < query.shifts_size(); i++) {
-        q.shifts.push_back(query.shifts()[i]);
+        desc.shift = query.sets(i).shift();
+        for (int j = 0; j < query.sets(i).aux_size()/2; j++) {
+            desc.aux.push_back(tuple<uint32_t, uint32_t>(query.sets(i).aux()[j*2], query.sets(i).aux()[j*2+1]));
+        }
+        q.sets.push_back(desc);
     }
     return q;
 }
 
 bool equal_offline_query(OfflineQuery a, OfflineQuery b) {
-    if (a.nbrsets != b.nbrsets || a.setsize != b.setsize || a.keylen != b.keylen || a.offline_keys.size() != b.offline_keys.size() || a.shifts.size() != b.shifts.size()) {
+    if (a.sets.size() != b.sets.size()) {
         return false;
     }
 
-    for (int i = 0; i < a.offline_keys.size(); i++) {
+    for (int i = 0; i < a.sets.size(); i++) {
         for (int j = 0; j < KeyLen; j++) {
-            if (a.offline_keys[i][j] != b.offline_keys[i][j])
+            if (a.sets[i].sk[j] != b.sets[i].sk[j]) {
                 return false;
+            }
+        }
+        if (a.sets[i].shift != b.sets[i].shift)
+            return false;
+        if (a.sets[i].aux.size() != b.sets[i].aux.size()) {
+            return false;
+        }
+        for (int j = 0; j < a.sets[i].aux.size(); j++) {
+            if (a.sets[i].aux[j] != b.sets[i].aux[j]) {
+                return false;
+            }
         }
     }
 
-    for (int i = 0; i < a.shifts.size(); i++) {
-        if (a.shifts[i] != b.shifts[i])
-            return false;
-    }
     return true;
 }
 
-string serialize_offline_add_query(OfflineAddQueryShort q) {
+string serialize_offline_add_query(UpdateQueryAdd q) {
     interface::OfflineAddQueryShort query;
     query.set_nbrsets(q.nbrsets);
     query.set_setsize(q.setsize);
-    for (int i = 0; i < q.req.size(); i++) {
-        interface::DiffSizeInfo* info = query.add_req();
-        info->set_setno(q.req[i].setno);
-        info->set_shift(q.req[i].shift);
-
-        // TODO check change here
-        for (int j = 0; j < q.req[i].key.size() / 4; j++) {
-            uint32_t tmp = 0;
-            for (int b = 0; b < 4; b++) {
-                tmp <<= 8;
-                tmp |= q.req[i].key[4*j+b];
-            }
-            info->add_key(tmp);
-            //info->add_key(q.req[i].key[j]);
+    for (int i = 0; i < q.diffsets.size(); i++) {
+        interface::DiffSetDesc* info = query.add_diffsets();
+        for (int j = 0; j < KeyLen; j++) {
+            info->add_sk(q.diffsets[i].sk[j]);
         }
+        
+        info->set_shift(q.diffsets[i].shift);
 
-        for (int j = 0; j < q.req[i].prev_side.size(); j++) {
-            info->add_prev_side(get<0>(q.req[i].prev_side[j]));
-            info->add_prev_side(get<1>(q.req[i].prev_side[j]));
+        for (int j = 0; j < q.diffsets[i].aux_curr.size(); j++) {
+            info->add_aux_curr(get<0>(q.diffsets[i].aux_curr[j]));
+            info->add_aux_curr(get<1>(q.diffsets[i].aux_curr[j]));
         }
-        for (int j = 0; j < q.req[i].cur_side.size(); j++) {
-            info->add_cur_side(get<0>(q.req[i].cur_side[j]));
-            info->add_cur_side(get<1>(q.req[i].cur_side[j]));
+        for (int j = 0; j < q.diffsets[i].aux_prev.size(); j++) {
+            info->add_aux_prev(get<0>(q.diffsets[i].aux_prev[j]));
+            info->add_aux_prev(get<1>(q.diffsets[i].aux_prev[j]));
         }
     }
 
-    // check 
-
-    uint8_t* ptr = q.master_key;
-    for (int i = 0; i < 16; i++) {
-        uint8_t master_val = *(ptr);
-        query.add_master_key(master_val);
-        ptr++;
+    for (int i = 0; i < KeyLen; i++) {
+        query.add_mk(q.mk[i]);
     }
 
     string res;
@@ -292,77 +251,66 @@ string serialize_offline_add_query(OfflineAddQueryShort q) {
     return res;
 }
 
-OfflineAddQueryShort deserialize_offline_add_query(string msg) {
+UpdateQueryAdd deserialize_offline_add_query(string msg) {
+    cout << "finish2\n";
     interface::OfflineAddQueryShort query;
     if (!query.ParseFromString(msg)) {
         cout << "deserialize offline add query failed\n";
         assert(0);
     }
-    OfflineAddQueryShort q;
+    UpdateQueryAdd q;
     q.nbrsets = query.nbrsets();
     q.setsize = query.setsize();
 
-    for (int i = 0; i < query.req_size(); i++) {
-        DiffSideInfo info;
-        info.setno = query.req()[i].setno();
-        info.shift = query.req()[i].shift();
-
-        // check 
-        for (int j = 0; j < KeyLen/4; j++) {
-            uint32_t tmp = query.req()[i].key()[j];
-
-            info.key[4*j] = uint8_t((tmp>>24) & 0xFF);
-            info.key[4*j+1] = uint8_t((tmp>>16) & 0xFF);
-            info.key[4*j+2] = uint8_t((tmp>>8) & 0xFF);
-            info.key[4*j+3] = uint8_t(tmp & 0xFF);
-            //info.key[j] = query.req()[i].key()[j];
+    for (int i = 0; i < query.diffsets_size(); i++) {
+        DiffSetDesc info;
+        for (int j = 0; j < KeyLen; j++) {
+            info.sk[j] = query.diffsets(i).sk(j);
         }
 
-        for (int j = 0; j < query.req()[i].prev_side_size() / 2; j++) {
-            std::tuple<uint32_t, uint32_t> t(query.req()[i].prev_side()[j*2], query.req()[i].prev_side()[j*2+1]);
-            info.prev_side.push_back(t);
+        info.shift = query.diffsets(i).shift();
+
+        for (int j = 0; j < query.diffsets()[i].aux_curr_size() / 2; j++) {
+            std::tuple<uint32_t, uint32_t> t(query.diffsets()[i].aux_curr()[j*2], query.diffsets()[i].aux_curr()[j*2+1]);
+            info.aux_curr.push_back(t);
         }
-        for (int j = 0; j < query.req()[i].cur_side_size() / 2; j++) {
-            std::tuple<uint32_t, uint32_t> t(query.req()[i].cur_side()[j*2], query.req()[i].cur_side()[j*2+1]);
-            info.cur_side.push_back(t);
+        for (int j = 0; j < query.diffsets()[i].aux_prev_size() / 2; j++) {
+            std::tuple<uint32_t, uint32_t> t(query.diffsets()[i].aux_prev()[j*2], query.diffsets()[i].aux_prev()[j*2+1]);
+            info.aux_prev.push_back(t);
         }
-        q.req.push_back(info);
+        q.diffsets.push_back(info);
     }
 
-    // check
-    assert(query.master_key_size() == 16);
-    q.master_key = (uint8_t*)malloc(16*sizeof(uint8_t));
-    uint8_t* ptr = q.master_key;
-    for (int i = 0; i < query.master_key_size(); i++) {
-        *(q.master_key+i) = (uint8_t)(query.master_key()[i]);
+    for (int i = 0; i < KeyLen; i++) {
+        q.mk[i] = query.mk(i);
     }
     return q;
 }
 
-bool equal_offline_add_query(OfflineAddQueryShort a, OfflineAddQueryShort b) {
-    if (a.nbrsets != b.nbrsets || a.setsize != b.setsize || a.req.size() != b.req.size()) {
+bool equal_offline_add_query(UpdateQueryAdd a, UpdateQueryAdd b) {
+    if (a.nbrsets != b.nbrsets || a.setsize != b.setsize || a.diffsets.size() != b.diffsets.size()) {
         return false;
     }
-    for (int i = 0; i < 16; i++) {
-        if (*(a.master_key+i) != *(b.master_key+i))
+    for (int i = 0; i < KeyLen; i++) {
+        if (a.mk[i] != b.mk[i])
             return false;
     }
-    for (int i = 0; i < a.req.size(); i++) {
-        if (a.req[i].setno != b.req[i].setno || a.req[i].shift != b.req[i].shift || a.req[i].prev_side.size() != b.req[i].prev_side.size() || a.req[i].cur_side.size() != b.req[i].cur_side.size()) {
+    for (int i = 0; i < a.diffsets.size(); i++) {
+        if (a.diffsets[i].shift != b.diffsets[i].shift || a.diffsets[i].aux_curr.size() != b.diffsets[i].aux_curr.size() || a.diffsets[i].aux_prev.size() != b.diffsets[i].aux_prev.size()) {
             return false;
         }
         for (int j = 0; j < KeyLen; j++) {
-            if (a.req[i].key[j] != b.req[i].key[j]) {
+            if (a.diffsets[i].sk[j] != b.diffsets[i].sk[j]) {
                 return false;
             }
         }
-        for (int j = 0; j < a.req[i].prev_side.size(); j++) {
-            if (a.req[i].prev_side[j] != b.req[i].prev_side[j]) {
+        for (int j = 0; j < a.diffsets[i].aux_curr.size(); j++) {
+            if (a.diffsets[i].aux_curr[j] != b.diffsets[i].aux_curr[j]) {
                 return false;
             }
         }
-        for (int j = 0; j < a.req[i].cur_side.size(); j++) {
-            if (a.req[i].cur_side[j] != b.req[i].cur_side[j]) {
+        for (int j = 0; j < a.diffsets[i].aux_prev.size(); j++) {
+            if (a.diffsets[i].aux_prev[j] != b.diffsets[i].aux_prev[j]) {
                 return false;
             }
         }

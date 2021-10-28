@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
         my_database[i] = val;
     }
     cout << "nbr_add: " << nbr_add << endl;
-    NetServer server;
-    server.run_offline(db_size, &my_database, ip, nbr_add, offer_load, baseline, time_period*0.01);
+    NetServer server(db_size, set_size, nbr_sets);
+    server.run_offline(&my_database, ip, nbr_add, offer_load, baseline, time_period*0.01);
     return 0;
 }

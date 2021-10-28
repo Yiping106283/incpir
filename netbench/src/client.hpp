@@ -22,6 +22,7 @@ public:
     int cur_qry_setno;        // set number for current query
     Block cur_qry_blk;        // data block for current query
 
+    PIRClient() {}
     // setup params and generate set keys
     PIRClient(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_);
 

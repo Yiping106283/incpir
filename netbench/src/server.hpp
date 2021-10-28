@@ -15,6 +15,8 @@ public:
 
     Database *db = nullptr;
 
+    PIRServer() {}
+
     PIRServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_);
 
     void set_database(std::vector<Block> *db_);

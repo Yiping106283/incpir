@@ -3,7 +3,7 @@
 
 vector<double> handle_time;
 
-void add_query(NetClient& client, Database& my_database, int db_size, int id, OfflineAddQueryShort& add_qry, string ip) {
+void add_query(NetClient& client, Database& my_database, int db_size, int id, UpdateQueryAdd& add_qry, string ip) {
     double total_time = 0.0;
     client.add_query(ip, add_qry, total_time);
     cout << "total time: " << total_time << " for id: " << id << endl;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
     vector<Block> query_res(offer_load);
     vector<int> query_idx(offer_load);
-    vector<OfflineAddQueryShort> querys(offer_load);
+    vector<UpdateQueryAdd> querys(offer_load);
     vector<NetClient> clients;
     vector<thread> t_vec;
     vector<OfflineQuery> offline_querys;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < offer_load; i++) {
         NetClient client(db_size, set_size, nbr_sets);
         client.offline_query(ip);
-        OfflineAddQueryShort add_qry = client.batched_addition_query(nbr_add);
+        UpdateQueryAdd add_qry = client.batched_addition_query(nbr_add);
         querys[i] = add_qry;
         clients.push_back(client);
     }

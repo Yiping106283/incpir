@@ -33,7 +33,7 @@ class NetServer : public PIRServer {
     string add_query_handler(string query_str) {
         system_clock::time_point start, end;
         start = system_clock::now();
-        OfflineAddQueryShort offline_add_qry = deserialize_offline_add_query(query_str);
+        UpdateQueryAdd offline_add_qry = deserialize_offline_add_query(query_str);
         end = system_clock::now();
         cout << "deserialize time: " << duration_cast<std::chrono::duration<double>>(end - start).count() << endl;
         start = system_clock::now();
@@ -48,8 +48,12 @@ class NetServer : public PIRServer {
     }
 
 public:
-    void run(uint32_t db_size_, Database* db_, string ip, double time_period) {
-        set_database(db_size_, db_);
+    NetServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_) {
+        PIRServer(dbrange_, setsize_, nbrsets_);
+    }
+
+    void run(Database* db_, string ip, double time_period) {
+        set_database(db_);
         int listen_fd = socket(PF_INET, SOCK_STREAM, 0);
         int sock_opt;
         assert(setsockopt(listen_fd, SOL_SOCKET, TCP_NODELAY | SO_REUSEADDR |
@@ -114,8 +118,8 @@ public:
 
     }
 
-    void run_offline(uint32_t db_size_, Database* db_, string ip, int nbr_add, int load, bool baseline, double time_period) {
-        set_database(db_size_, db_);
+    void run_offline(Database* db_, string ip, int nbr_add, int load, bool baseline, double time_period) {
+        set_database(db_);
         int listen_fd = socket(PF_INET, SOCK_STREAM, 0);
         int sock_opt;
         assert(setsockopt(listen_fd, SOL_SOCKET, TCP_NODELAY | SO_REUSEADDR |
@@ -240,8 +244,8 @@ public:
         cout << "finish\n";
     }
 
-    void run_refresh(uint32_t db_size_, Database* db_, string ip, double time_period) {
-        set_database(db_size_, db_);
+    void run_refresh(Database* db_, string ip, double time_period) {
+        set_database(db_);
         int listen_fd = socket(PF_INET, SOCK_STREAM, 0);
         int sock_opt;
         assert(setsockopt(listen_fd, SOL_SOCKET, TCP_NODELAY | SO_REUSEADDR |

@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
         auto val = generateRandBlock();
         my_database[i] = val;
     }
-    NetServer server;
-    server.run(db_size, &my_database, ip, 0.01*time_period);
+    NetServer server(db_size, set_size, nbr_sets);
+    server.run(&my_database, ip, 0.01*time_period);
     return 0;
 }

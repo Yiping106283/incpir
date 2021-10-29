@@ -11,8 +11,7 @@ This repository contains the implementation for our paper "Incremental Offline/O
 
 
 ## Setup
-Run `sudo bash install.sh` to install all the dependencies (openssl, protobuf, python3, matplotlib). 
-
+Please refer to [install.md](./install.md) for installing related dependencies.
 
 ## Running experiments
 We did experiments on CloudLab, but it can also be run locally on a linux machine.

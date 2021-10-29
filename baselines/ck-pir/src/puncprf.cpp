@@ -33,9 +33,6 @@ vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
     // high should be s (i.e., (1,,(lgn/2)))
     vector<uint32_t> vec(high-low);
 
-    /*cout << "root key = ";
-    print_key(rootkey);*/
-
     // all leaves of a proper left tree (need to find that)
     // traverse level by level
     // release the previous level after getting the current level node label
@@ -43,9 +40,6 @@ vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
     uint32_t subheight = lgn/2;
 
     // eval from root to subheight, get that node label (go straight left)
-    //uint8_t *subroot = static_cast<uint8_t *>(malloc(KeyLen));
-    //memcpy(subroot, rootkey, KeyLen);
-
     Key subroot;
     for (int i = 0; i < KeyLen; i++) {
         subroot[i] = rootkey[i];
@@ -53,12 +47,8 @@ vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
 
     for (int i = 0; i < subheight; i++) {
         subroot = get<0>(PRG(subroot));
-        //memcpy(subroot, get<0>(PRG(subroot)), KeyLen);
     }
     // now subroot is the node label
-
-    /*cout << "subroot = ";
-    print_key(subroot);*/
 
     vector<Key> prev_nodes; // node labels at current level
     prev_nodes.push_back(subroot);
@@ -78,23 +68,17 @@ vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
             // expand to two keys,
             // put the two keys into the current vec pool
 
-            //memcpy(keyb, prev_nodes[b], KeyLen);
             keyb = prev_nodes[b];
-
             tuple<Key, Key> derived_keys = PRG(keyb);
-
             cur_nodes.push_back(get<0>(derived_keys));
             cur_nodes.push_back(get<1>(derived_keys));
-
         }
 
         prev_nodes = cur_nodes;
         cur_nodes.clear();
-
     }
 
     // output eval results in prev_nodes;
-
     for (int i = 0; i < vec.size(); i++) {
         uint32_t res = 0;
 
@@ -112,13 +96,10 @@ vector<uint32_t> BreadthEval(Key rootkey, int low, int high,
                 break;
             }
         }
-
         vec[i] = res;
     }
-
     return vec;
 }
-
 
 tuple<Key, Key> PRG (Key stkey) {
 
@@ -157,7 +138,6 @@ uint32_t Eval (Key key, uint32_t x, uint32_t lgn, uint32_t range) {
         throw invalid_argument("Eval input invalid");
 
     // extract bits in x, and decide whether go left or right
-
     Key node_key;
     for (int i = 0; i < KeyLen; i++) {
         node_key[i] = key[i];
@@ -200,18 +180,6 @@ uint32_t Eval (Key key, uint32_t x, uint32_t lgn, uint32_t range) {
         }
     }
 
-
-    // truncate node_key to lgn bits
-    /*uint32_t res = 0;
-    for (int i = 0; i < 4; i++) {
-        res <<= 8;
-        //printf("node_key: %x,", node_key[i]);
-        res |= node_key[i];
-        //printf("res: %d\n", res);
-    }
-    res &= ((1<<lgn)-1);
-     */
-
     return res;
 }
 
@@ -228,15 +196,10 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
     // parse x from lgn-1 bits, to 0 bits
     // determine the path
 
-    // uint8_t *cur_key = static_cast<uint8_t *>(malloc(KeyLen));
-    // memset(cur_key, 0, KeyLen);
-
     Key cur_key;
-
     int cur_pos = 1;
 
     for (int i = 1; i <= lgn; i++) {
-
         // get x's current bit
         int bitvec_cur = (punc_keys.bitvec & (1<<(lgn-i)));
         int x_cur = (x & (1<<(lgn-i)));
@@ -245,21 +208,16 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
             // if x's current bit differs from bitvec current bit
             // then we take the current key
             // and eval (traverse down) the rest of the bits of x
-
-            // memcpy(cur_key, punc_keys.keys[i-1], KeyLen);
             for (int ki = 0; ki < KeyLen; ki++) {
                 cur_key[ki] = punc_keys.keys[i-1][ki];
             }
 
             break;
         }
-
         cur_pos++;
     }
 
-
     // let the cur_key be the "root" key and eval the rest bits of x
-
     Key node_key;
     for (int i = 0; i < KeyLen; i++){
         node_key[i] = cur_key[i];
@@ -283,7 +241,6 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
             node_key = get<1>(derived_keys);
         }
     }
-    // free(cur_key);
     // here we should get the pseudorandom label at leaf
 
     // use node_key to find lgn bits values in range
@@ -307,20 +264,7 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
         }
     }
 
-
-    // truncate node_key to lgn bits
-    /*uint32_t res = 0;
-    for (int i = 0; i < 4; i++) {
-        res <<= 8;
-        //printf("node_key: %x,", node_key[i]);
-        res |= node_key[i];
-        //printf("res: %d\n", res);
-    }
-
-    res &= ((1<<lgn)-1);*/
-
     return res;
-
 }
 
 
@@ -328,7 +272,6 @@ int EvalPunc (PuncKeys punc_keys, uint32_t x, uint32_t lgn, uint32_t range) {
 PuncKeys Punc(Key key, uint32_t punc_x, uint32_t lgn) {
     uint32_t punc_number = punc_x;
     PuncKeys punckeys;
-
     punckeys.height = lgn;
 
     Key node_key;
@@ -346,7 +289,6 @@ PuncKeys Punc(Key key, uint32_t punc_x, uint32_t lgn) {
             punc_number -= (1<<lgn)/(1<<i);
 
             // extract left node
-            //uint8_t *tmp_dleft = static_cast<uint8_t *>(malloc(KeyLen));
             Key dleft;
             for (int kidx = 0; kidx < KeyLen; kidx++) {
                 dleft[kidx] = get<0>(derived_keys)[kidx];
@@ -362,11 +304,8 @@ PuncKeys Punc(Key key, uint32_t punc_x, uint32_t lgn) {
             punckeys.bitvec |= (1<<(lgn-i));
 
         } else {
-
             // punc_number remains the same
-
             // extract right node
-            //uint8_t *dright = static_cast<uint8_t *>(malloc(KeyLen));
             Key dright;
             for (int kidx = 0; kidx < KeyLen; kidx++) {
                 dright[kidx] = get<1>(derived_keys)[kidx];
@@ -375,7 +314,6 @@ PuncKeys Punc(Key key, uint32_t punc_x, uint32_t lgn) {
 
             // go to left tree, set node_key to left_key
             node_key = get<0>(derived_keys);
-
         }
     }
     return punckeys;

@@ -115,8 +115,6 @@ bool equal_offline_reply(OfflineReply a, OfflineReply b) {
         return false;
     for (int i = 0; i < a.hints.size(); i++) {
         if (a.hints[i] != b.hints[i]) {
-            // cout << a.hints[i] << endl;
-            // cout << b.hints[i] << endl;
             return false;
         }
     }
@@ -192,13 +190,8 @@ string serialize_offline_query(OfflineQuery q) {
                 tmp <<= 8;
                 tmp |= q.offline_keys[i][4*j+b];
             }
-
-        
             query.add_offline_keys(tmp);     
         }
-        //for (int j = 0; j < KeyLen; j++) {
-        //    query.add_offline_keys((uint32_t)q.offline_keys[i][j]);
-        //}
     }
 
     for (int i = 0; i < q.shifts.size(); i++) {
@@ -229,13 +222,7 @@ OfflineQuery deserialize_offline_query(string msg) {
             key[4*j+1] = uint8_t((tmp>>16) & 0xFF);
             key[4*j+2] = uint8_t((tmp>>8) & 0xFF);
             key[4*j+3] = uint8_t(tmp & 0xFF);
-
-            //key[j] = (uint8_t)query.offline_keys()[i*KeyLen+j];
         }
-
-        //for (int j = 0; j < KeyLen; j++) {
-        //    key[j] = (uint8_t)query.offline_keys()[i*KeyLen+j];
-        //}
         q.offline_keys.push_back(key);
     }
 

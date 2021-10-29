@@ -21,8 +21,7 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    // test puncturable set
-    // parms
+    // set parms
     uint32_t lgn = 17; // database n = 2^lgn
 
     uint32_t db_size = 70000;
@@ -43,17 +42,18 @@ int main(int argc, char* argv[]) {
         my_database[i] = val;
     }
 
-    PIRClient client;
-    client.set_parms(db_size, (1<<(lgn/2)), (1<<(lgn/2))*12);
-    client.generate_setkeys();
-
+    // setup server
     PIRServer server;
     server.set_database(db_size, &my_database);
     cout << "server database set." << endl;
 
+    // setup client
+    PIRClient client;
+    client.set_parms(db_size, (1<<(lgn/2)), (1<<(lgn/2))*12);
+    client.generate_setkeys();
 
-    // OFFLINE PHASE
 
+    // client generates offline query
     OfflineQuery offline_qry = client.generate_offline_query();
     OfflineQuery offline_qry1 = deserialize_offline_query(serialize_offline_query(offline_qry));
 
@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
     assert(equal_offline_query(offline_qry1, offline_qry));
     cout << "client generate offline query done." << endl;
 
+    // server generates offline reply
     auto server_offline_st = chrono::high_resolution_clock::now();
     OfflineReply offline_reply = server.generate_offline_reply_fast(offline_qry1, 1);
     OfflineReply offline_reply1 = deserialize_offline_reply(serialize_offline_reply(offline_reply));
@@ -75,9 +76,10 @@ int main(int argc, char* argv[]) {
             (server_offline_ed - server_offline_st).count();
     cout << "server generate offline reply done in " << server_offline_time << " microsec." << endl;
 
+    // client stores hints locally
     client.update_local_hints(offline_reply1);
 
-    // ONLINE PHASE
+    // client generates online query
     OnlineQuery online_qry;
     uint32_t qry_idx = rand() % db_size;
     online_qry = client.generate_online_query(qry_idx);
@@ -87,6 +89,7 @@ int main(int argc, char* argv[]) {
     assert(equal_online_query(online_qry1, online_qry));
     cout << "client generate online query done."<< endl;
 
+    // server generates online reply
     auto server_online_st = chrono::high_resolution_clock::now();
     OnlineReply online_reply = server.generate_online_reply(online_qry1, 1);
     OnlineReply online_reply1 = deserialize_online_reply(serialize_online_reply(online_reply));
@@ -99,15 +102,16 @@ int main(int argc, char* argv[]) {
             (server_online_ed - server_online_st).count();
     cout << "server generate online reply done in " << server_online_time << " microsec." << endl;
 
+    // client reconstructs block
     Block blk = client.recover_block(online_reply1);
     cout << "client recover done."  << endl;
 
+    // check correctness
     if (blk == my_database[qry_idx]) {
         cout << "success" << endl;
     } else cout << "fail" << endl;
 
-    // client refresh
-    
+    // client refreshes
     OnlineQuery refresh_query = client.generate_refresh_query(qry_idx); 
 
     cout << "refresh query size: " 
@@ -122,15 +126,7 @@ int main(int argc, char* argv[]) {
       << double(serialize_online_reply(refresh_reply).size()) / double(1000) << " KB" << endl;
     cout << "server generate refresh reply done in " << server_refresh_time << " microsec." << endl;
 
-    client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
-
-    // CHECK: generate query again
-    // online_qry = client.generate_online_query(qry_idx);
-    // online_reply = server.generate_online_reply(online_qry, 1);
-    // blk = client.recover_block(online_reply);
-    // if (blk == my_database[qry_idx]) {
-    //     cout << "succ" << endl;
-    // } else cout << "fail" << endl;
+    client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;   // update hints
 
     return 0;
 }

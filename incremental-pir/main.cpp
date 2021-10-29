@@ -68,9 +68,6 @@ int main(int argc, char* argv[])
     Database my_database(my_params.dbrange);
     for (int i = 0; i < my_params.dbrange; i++) {
         auto val = rd() % 1000000;
-        my_database[i] = val;
-        // create enough non-zeros
-        my_database[i] |=  (my_database[i] << 100);
     }
 
     // initialize server
@@ -87,8 +84,6 @@ int main(int argc, char* argv[])
     auto c_prep_time = std::chrono::duration_cast<std::chrono::microseconds>
             (c_prep_ed - c_prep_st).count();
     benchdat.client_prep = double(c_prep_time)/double(ONEMS);
-    // cout << "Prep: client generates offline query in "
-    //   << double(c_prep_time)/double(ONEMS) << " ms" << endl;
 
     // Prep: server generates offline reply
     auto s_prep_st = chrono::high_resolution_clock::now();
@@ -97,11 +92,7 @@ int main(int argc, char* argv[])
     auto s_prep_time = std::chrono::duration_cast<std::chrono::microseconds>
             (s_prep_ed - s_prep_st).count();
     benchdat.server_prep = double(s_prep_time)/double(ONESEC);
-    // cout << "Prep: server generates offline reply in "
-    //   << double(s_prep_time)/double(ONESEC) << " sec" << endl;
-
     benchdat.comm_prep = double(my_params.nbrsets * (224+BlockLen)) / double(8000000);
-    // cout << "Prep Comm " << double(my_params.nbrsets * (224+BlockLen)) / double(8000000)  << " MB" << endl; 
 
     // client stores hints locally
     client.update_parity(offline_reply);
@@ -116,12 +107,10 @@ int main(int argc, char* argv[])
     auto c_query_time = std::chrono::duration_cast<std::chrono::microseconds>
             (c_query_ed - c_query_st).count();
     benchdat.client_query = double(c_query_time)/double(ONEMS);
-    // cout << "Query: client generates online query in "
-    //   << double(c_query_time)/double(ONEMS) << " ms" << endl;
+
 
     benchdat.comm_query = double(online_query.indices.size() * 64) / double(8000);
     benchdat.comm_refresh = benchdat.comm_query;
-    // cout << "Query Comm " << double(online_query.indices.size() * 32) / double(8000)  << " KB" << endl;
 
     // server generates online reply
     auto s_query_st = chrono::high_resolution_clock::now();
@@ -130,17 +119,9 @@ int main(int argc, char* argv[])
     auto s_query_time = std::chrono::duration_cast<std::chrono::microseconds>
             (s_query_ed - s_query_st).count();
     benchdat.server_resp = double(s_query_time)/double(ONEMS);
-    // cout << "Reply: server generates online reply in "
-    //   << double(s_query_time)/double(ONEMS) << " ms" << endl;
-
 
     // client reconstructs queried block
     Block blk = client.query_recov(online_reply);
-
-    // check correctness
-    // if (blk == my_database[client.cur_qry_idx])  {
-    //     cout << "success" << endl;
-    // } else cout << "fail" << endl;
 
     // client generates refresh query
     auto c_refresh_st = chrono::high_resolution_clock::now();
@@ -149,20 +130,15 @@ int main(int argc, char* argv[])
     auto c_refresh_time = std::chrono::duration_cast<std::chrono::microseconds>
             (c_refresh_ed - c_refresh_st).count();
     benchdat.client_refresh = double(c_refresh_time)/double(ONEMS);
-    // cout << "Refresh: client generates refresh query in "
-    //   << double(c_refresh_time)/double(ONEMS) << " ms" << endl;
-
+  
     auto s_refresh_st = chrono::high_resolution_clock::now();
     OnlineReply refresh_reply = server.generate_online_reply(refresh_query, 1);
     auto s_refresh_ed = chrono::high_resolution_clock::now();
     auto s_refresh_time = std::chrono::duration_cast<std::chrono::microseconds>
             (s_refresh_ed - s_refresh_st).count();
-    // cout << "Refresh: server generates refresh reply in "
-    // << double(s_refresh_time)/double(ONEMS) << " ms" << endl;
 
     // client updates hints for a new set after refresh
     client.refresh_recov(refresh_reply);
-
 
     // query again, test correctness
     client.cur_qry_idx = rand() % my_params.dbrange;
@@ -171,12 +147,6 @@ int main(int argc, char* argv[])
     online_reply = server.generate_online_reply(online_query, 1);
 
     blk = client.query_recov(online_reply);
-
-    // if (blk == my_database[client.cur_qry_idx]) {
-    //     std::cout << "success" << std::endl;
-    // } else {
-    //     std::cout << "fail" << std::endl;
-    // }
 
 
     // test IncPrep
@@ -204,8 +174,6 @@ int main(int argc, char* argv[])
     auto c_add_time = std::chrono::duration_cast<std::chrono::microseconds>
             (c_add_ed - c_add_st).count();
     benchdat.client_incprep = double(c_add_time)/double(ONESEC);
-    // cout << "IncPrep: client generates update request in "
-    //   << double(c_add_time)/double(ONESEC) << " sec" << endl;
 
     // IncPrep: server generates hint update response
     auto s_add_st = chrono::high_resolution_clock::now();
@@ -214,15 +182,11 @@ int main(int argc, char* argv[])
     auto s_add_time = std::chrono::duration_cast<std::chrono::microseconds>
             (s_add_ed - s_add_st).count();
     benchdat.server_incprep = double(s_add_time)/double(ONESEC);
-    // cout << "IncPrep: server generates hint update response in "
-    //   << double(s_add_time)/double(ONESEC) << " sec" << endl;
     benchdat.comm_incprep = double(my_params.nbrsets * (KeyLen + 32 + 64 + 128 + BlockLen)) / double(8000000);
-    // cout << "IncPrep Comm " << double(my_params.nbrsets * (KeyLen + 32 + 64 + 128 + BlockLen)) / double(8000000)  << " MB" << endl;
 
 
     // IncPrep: client updates local hints
     client.update_parity(offline_add_reply);
-
 
     // test client online query after one batched addition
     client.cur_qry_idx = my_database.size() - 2;
@@ -235,11 +199,12 @@ int main(int argc, char* argv[])
     blk = client.query_recov(online_reply);
 
     // check correctness
-    // if (blk == my_database[client.cur_qry_idx])
-    //     std::cout << "success!" << std::endl;
-    // else std::cout << "fail!" << std::endl;
+    // fail with small probability
+    if (blk == my_database[client.cur_qry_idx])
+        std::cout << "success!" << std::endl;
+    else std::cout << "fail!" << std::endl;
 
-  print_benchdat(benchdat);
+    print_benchdat(benchdat);
     
     return 0;
 }

@@ -15,16 +15,12 @@ PIRClient::PIRClient() {
 void PIRClient::set_parms(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_) {
     dbrange = dbrange_;
     lgn = int(log2(dbrange)-1)+1;
-
     setsize = setsize_;
     nbrsets = nbrsets_;
-
     punc_x = 0;
-
 }
 
 void find_valid_key(Key key, int lgn, uint32_t dbrange) {
-
     // find valid key without collisions
     set<uint32_t> tmp;
 
@@ -60,28 +56,18 @@ void find_valid_key(Key key, int lgn, uint32_t dbrange) {
 }
 
 void PIRClient::generate_setkeys() {
-
     // re-gen keys until valid (no collision)
-
     for(int i = 0; i < nbrsets; i++) {
-
         SetDesc tmp;
-
-        // tmp.prf_key = static_cast<uint8_t *>(malloc(KeyLen));
-        // memset(tmp.prf_key, 0, KeyLen);
         uint8_t *tmpkey = static_cast<uint8_t *>(malloc(KeyLen));
         for (int ki = 0; ki < KeyLen; ki++) {
             tmp.prf_key[ki] = tmpkey[ki];
         }
-
         // re-gen key until valid
         find_valid_key(tmp.prf_key, lgn, dbrange);
-
         tmp.shift = rand() % dbrange;
-
         sets.push_back(tmp);
     }
-
 }
 
 void CopyKey(Key &key, uint8_t *prf_key) {
@@ -97,12 +83,8 @@ OfflineQuery PIRClient::generate_offline_query() {
     tmp.setsize = setsize;
 
     for (int i = 0; i < nbrsets; i++) {
-        //Key key;
-        //CopyKey(key, sets[i].prf_key);
         tmp.offline_keys.push_back(sets[i].prf_key);
-
         tmp.shifts.push_back(sets[i].shift);
-
     }
 
     return tmp;
@@ -120,13 +102,8 @@ OnlineQuery PIRClient::generate_refresh_query(uint32_t desired_idx) {
     uint32_t setno = cur_qry_setno;
     OnlineQuery refresh_query;
 
-    // sample a new key
-    // if (sets[setno].prf_key != NULL)
-    //     free(sets[setno].prf_key);
-
     // generate new key
     uint8_t *tmp_prf_key = static_cast<uint8_t *>(malloc(KeyLen));
-    //sets[setno].prf_key = static_cast<uint8_t *>(malloc(KeyLen));
     RAND_bytes(tmp_prf_key, KeyLen);
     for (int i = 0; i < KeyLen; i++) {
         sets[setno].prf_key[i] = tmp_prf_key[i];
@@ -146,25 +123,18 @@ OnlineQuery PIRClient::generate_refresh_query(uint32_t desired_idx) {
     refresh_query.shift = sets[setno].shift;
 
     return refresh_query;
-
 }
 
 OnlineQuery PIRClient::generate_online_query(uint32_t desired_idx) {
 
     OnlineQuery online_query;
 
-    // (use PRF to find one by one)
-
     // find a set
     int setno = -1;
-    //uint32_t punc_x = 0;
 
     for (int s = 0; s < nbrsets; s++) {
-
         for (int i = 0; i < (1<<(lgn/2)); i++) {
-
             uint32_t y = Eval(sets[s].prf_key, i, lgn, dbrange);
-
             if ((y+sets[s].shift)%dbrange == desired_idx) {
                 punc_x = i;
                 setno = s;
@@ -180,8 +150,7 @@ OnlineQuery PIRClient::generate_online_query(uint32_t desired_idx) {
 
     cur_qry_setno = setno;
 
-    // punc the set key (should be probabilistic!)
-
+    // punc the set key (should be probabilistic, for testing reason just punc x)
     PuncKeys punckeys = Punc(sets[setno].prf_key, punc_x, lgn);
 
     online_query.height = punckeys.height;

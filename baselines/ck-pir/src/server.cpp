@@ -45,11 +45,8 @@ OfflineReply PIRServer::generate_offline_reply_fast(OfflineQuery offline_qry, ui
             uint32_t y = (raw_indices[j] + offline_qry.shifts[i]) % db_size;
             tmp.hints[i] = tmp.hints[i] ^ ((*db)[y]);
         }
-
     }
-
     return tmp;
-
 }
 
 

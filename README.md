@@ -1,4 +1,4 @@
-# Artifact Evaluation
+# Incremental Offline/Online PIR
 
 This repository contains the implementation for our paper "Incremental Offline/Online PIR", which will appear at USENIX Security 2022.
 
@@ -16,19 +16,14 @@ Please refer to [install.md](./install.md) for installing related dependencies.
 ## Running experiments
 We did experiments on CloudLab, but it can also be run locally on a linux machine.
 
-#### Microbenchmark (Figure 7)
+#### Microbenchmarks
 
-In folder `incremental-pir`, run the script `run.sh`. It will produce each column in the table.
-
-
-#### Throughput and latency (Figure 8a and 8b)
-
-These are figures for the online phase (8a) and offline (preprocessing or hint updates) phase (8b).
-
-In folder `netbench/figs`, run the script `run.sh`. It includes the metadata we measured and you will get figures in `netbench/figs`. 
+In folder `incremental-pir`, run the script `run.sh`. It will produce each column in the table. See [here](./incremental-pir/readme.md) for more details.
 
 
-To test functionality for incremental CK, run `./offline_server_eval` and `./offline_client_eval` on two machines with the following parameters:
+#### Throughput and latency 
+
+For end-to-end tests, run `./offline_server_eval` and `./offline_client_eval` on two machines with the following parameters:
 
 ```
 -i [ip addr] 
@@ -37,51 +32,19 @@ To test functionality for incremental CK, run `./offline_server_eval` and `./off
 -a [incprep] -b [baseline]
 ```
 
-where parameters for the server and the client should be the same except ip. For example,
+where parameters for the server and the client should be the same except ip.
+See [incremental pir](./netbench/readme.md), [ck baseline](./baselines/ck-pir/readme.md) and [dpf baseline](./baselines/dpf-pir/readme.md) for more details.
 
-Prep
+The server program needs to be manually killed, otherwise, it will always be waiting for new requests.
 
-```sh
-./offline_server_eval -i 0.0.0.0:6666 -t 1000 -l 50 -d 7000 -s 84 -n 1020 -b
-./offline_client_eval -i [XXX.XXX.XXX.XXX]:6666 -t 1000 -l 50 -d 7000 -s 84 -n 1020 -b
-```
+#### Communication measured in protobuf
 
-IncPrep
+See [incremental pir](./netbench/readme.md), [ck baseline](./baselines/ck-pir/readme.md) and [dpf baseline](./baselines/dpf-pir/readme.md) in each folder.
 
-```sh
-./offline_server_eval -i 0.0.0.0:6666 -t 1000 -l 50 -d 7000 -s 84 -n 1020  -a 70
-./offline_client_eval -i [XXX.XXX.XXX.XXX]:6666 -t 1000 -l 50 -d 7000 -s 84 -n 1020 -a 70
-```
+#### Tor trace simulation
 
-The server will print process time for each task and the client will print latency for each task. 
+In folder `torsim`, run `sh run.sh`.
 
+## Misc
 
-To test CK, in folder `baselines/CK` , run 
-
-```
-./server -o -i 0.0.0.0:6666 -t 10 -g 13 -d 7000
-./online_client_eval -i [XXX.XXX.XXX.XXX]:6666 -t 10 -l 100 -g 13 -d 7000
-```
-
-
-To test DPF-PIR, in folder `baselines/dpf-pir`, run
-
-```
-./server -t 10 -l 15 -i 0.0.0.0:6666 -g 13
-./client -t 10 -l 15 -i [XXX.XXX.XXX.XXX]:6666 -g 13
-```
-
-(The server program needs to be manually killed, otherwise, it will always be waiting for new requests)
-
-#### Communication in protobuf (Figure 9a and 9b)
-
-These are figures for communication in online and offline (preprocessing or hint updates) phases.
-
-In folder `netbench/figs`, run the script `run.sh`. See figures in `netbench/figs`. 
-
-
-#### Tor trace simulation (Figure 10a and 10b)
-
-These are figures for server computation cost (10a) and client storage growth (10b).
-
-In folder `torsim`, run `sh run.sh` and see `Figure-12a.pdf` and `Figure-12b.pdf` in this folder.
+We have updated the code slightly from the version in [Artifact Evaluation](https://github.com/Yiping106283/incpir/tree/main).

@@ -19,7 +19,6 @@ typedef std::array<uint8_t, KeyLen> Key;
 typedef struct {
     int height;
     uint32_t bitvec = 0; // starting from right most bit
-    //vector<uint8_t *> keys;
     vector<Key> keys;
 } PuncKeys;
 

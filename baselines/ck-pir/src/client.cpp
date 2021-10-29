@@ -180,22 +180,13 @@ OnlineQuery PIRClient::generate_online_query(uint32_t desired_idx) {
 
     cur_qry_setno = setno;
 
-    cout << " ****** " << endl;
-
     // punc the set key (should be probabilistic!)
 
     PuncKeys punckeys = Punc(sets[setno].prf_key, punc_x, lgn);
 
-    cout << " after Punc ****** " << endl;
-
     online_query.height = punckeys.height;
     online_query.bitvec = punckeys.bitvec;
 
-    cout << "before copy" << endl;
-    // for (int i = 0; i < punckeys.keys.size(); i++) {
-    //     online_query.keys[i] = punckeys.keys[i];
-    // }
-    //  cout << "after copy" << endl;
     online_query.keys = punckeys.keys;
     online_query.shift = sets[setno].shift;
 

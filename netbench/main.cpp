@@ -27,7 +27,7 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-    /* Make test database and set related parms */
+    /* setup test database and related parms */
 
     uint32_t db_size = 7000;
     uint32_t set_size = 80;
@@ -46,25 +46,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Note: protobuf has non-trivial compression. 
+    // If the block has obvious patterns, protobuf will
+    // compress the blocks to reduce communication.
     std::random_device rd;
     Database my_database(db_size);
     for (int i = 0; i < db_size; i++) {
-        auto val = rd() % 1000000;
-        my_database[i] = val;
-        // create enough non-zeros
-        my_database[i] |=  (my_database[i] << 100);
+        my_database[i] = generateRandBlock();
     }
-
-// Offline phase begin
 
     /* Setup client */
     PIRClient client(db_size, set_size, nbr_sets);
-
-    // /* Client set params */
-    // client.set_parms(db_size, set_size, nbr_sets);
-
-    // /* Client generate set keys (locally stored) */
-    // client.generate_setkeys();
 
     /* Client generate offline query for fetching hints (preprocessed info) */
     OfflineQuery offline_qry = client.generate_offline_query();
@@ -78,8 +70,6 @@ int main(int argc, char *argv[]) {
 
     /* Server setup database */
     server.set_database(&my_database);
-    //std::cout << "server database set." << std::endl;
-
 
     /* Offline reply: output hints (preprocessed info) */
     auto s_prep_st = chrono::high_resolution_clock::now();
@@ -99,10 +89,6 @@ int main(int argc, char *argv[]) {
     /* Offline client hint: client locally stores hints */
     client.update_parity(offline_reply);
 
-// Offline phase end
-
-
-// Online phase begin
 
     /* Online query */
     OnlineQuery online_qry;
@@ -122,7 +108,7 @@ int main(int argc, char *argv[]) {
 
     OnlineReply online_reply1 = deserialize_online_reply(serialize_online_reply(online_reply));
 
-    /* Client recover data block */
+    /* Client recovers data block */
     Block blk = client.query_recov(online_reply1);
 
     if (blk == my_database[qry_idx]) {
@@ -131,7 +117,7 @@ int main(int argc, char *argv[]) {
         std::cout << "recover fail!" << std::endl;
     }
 
-    /* Client refresh (probabilistic correctness version) */
+    /* Client refresh */
     OnlineQuery refresh_query = client.generate_refresh_query(qry_idx);
     
     cout << "refresh query size: " 
@@ -143,17 +129,11 @@ int main(int argc, char *argv[]) {
       << double(serialize_online_reply(refresh_reply).size()) / double(1000) << " KB" << endl;
 
     client.refresh_recov(refresh_reply);
-    // client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
 
-    // incorporate Checklist refresh if possible later
-
-// Online phase end
-
-
-// Batched addition begin (adding a single batch)
 
     /* Set up data objects to be added */
-    int nbr_add = 0.05 * db_size;   // number of additions (i.e., batch size) = 1% of database size
+    double perct_add = 0.05;
+    int nbr_add = perct_add * db_size;   // number of additions (i.e., batch size)
 
     // assign random value to items to be added
     std::vector<Block> v(nbr_add);
@@ -165,7 +145,6 @@ int main(int argc, char *argv[]) {
     server.add_elements(nbr_add, v);
 
     /* Server notifies client about 'nbr_add' */
-    // TODO: we probably can omit this in testing?
 
     /* Client generates batched addition query */
     UpdateQueryAdd offline_add_qry = client.batched_addition_query(nbr_add);
@@ -187,33 +166,26 @@ int main(int argc, char *argv[]) {
     /* Client update local hints after one batched addition */
     client.update_parity(offline_add_reply1);
 
-// Batched addition end
 
+    // In order to see if hints are correctly updated, let the client issue online query
 
-// Test begin
-// In order to see if hints are correctly updated, let client issue online query
-
-    /* Test client online query after one batched addition */
-    qry_idx = 7010;
+    /* Test online query after one batched addition */
+    qry_idx = rand() % client.dbrange;
     online_qry = client.generate_online_query(qry_idx);
 
     /* Server generates online reply */
     online_reply = server.generate_online_reply(online_qry, 1);
 
-    /* Client recovers block */
+    /* Client query reconstruct */
     blk = client.query_recov(online_reply);
     if (blk == my_database[qry_idx])
         std::cout << "success!" << std::endl;
     else std::cout << "fail!" << std::endl;
 
-
-    /* Client refresh */
+    /* Client refresh reconstruct */
     refresh_query = client.generate_refresh_query(qry_idx);
     refresh_reply = server.generate_online_reply(refresh_query, 1);
-    // client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
     client.refresh_recov(refresh_reply);
-
-// Test end
 
     return 0;
 }

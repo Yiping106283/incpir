@@ -13,9 +13,7 @@ class NetClient : public PIRClient {
     }
 
 public:
-    NetClient(uint32_t db_size, uint32_t set_size, uint32_t nbr_sets) {
-        PIRClient(db_size, set_size, nbr_sets);
-    }
+    NetClient(uint32_t db_size, uint32_t set_size, uint32_t nbr_sets): PIRClient(db_size, set_size, nbr_sets) {}
 
     void offline_query(string ip) {
         OfflineQuery offline_qry = generate_offline_query();

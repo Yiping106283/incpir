@@ -25,10 +25,6 @@ int main(int argc, char* argv[]) {
     // parms
     uint32_t lgn = 17; // database n = 2^lgn
 
-    // test BreadthEval
-
-    // test EvalPunc
-
     uint32_t db_size = 70000;
 
     int opt;
@@ -44,10 +40,7 @@ int main(int argc, char* argv[]) {
     Database my_database(db_size);
     for (int i = 0; i < db_size; i++) {
         auto val = generateRandBlock();
-        // create enough non-zeros
         my_database[i] = val;
-        my_database[i] |= (my_database[i] << 100);
-        my_database[i] |= (my_database[i] << 100);
     }
 
     PIRClient client;
@@ -128,7 +121,6 @@ int main(int argc, char* argv[]) {
     cout << "refresh reply size: " 
       << double(serialize_online_reply(refresh_reply).size()) / double(1000) << " KB" << endl;
     cout << "server generate refresh reply done in " << server_refresh_time << " microsec." << endl;
-
 
     client.sets[client.cur_qry_setno].hint = blk ^ refresh_reply.parity;
 

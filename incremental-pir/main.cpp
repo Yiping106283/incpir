@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
     // test IncPrep
 
     // setup additions
-    double frac = 0.01;
-    int nbr_add = frac * my_params.dbrange;
+    double perct_add = 0.01;
+    int nbr_add = perct_add * my_params.dbrange;
     my_params.dbrange += nbr_add;
 
     // assign random value to added items

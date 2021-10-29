@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 Key kdf(Key mk, Key sk, uint32_t batch_no) {
 
     uint8_t *mkptr = static_cast<uint8_t *>(malloc(KeyLen));

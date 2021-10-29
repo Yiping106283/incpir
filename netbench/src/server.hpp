@@ -28,11 +28,9 @@ public:
 
     OfflineReply batched_addition_reply(UpdateQueryAdd offline_add_qry);
 
-
-
     // sends back xor individually
-//    Block delete_element(uint32_t idx);
-//    Block edit_element(uint32_t idx, Block new_element);
+    Block delete_element(uint32_t idx);
+    Block edit_element(uint32_t idx, Block new_element);
 
 };
 

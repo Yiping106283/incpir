@@ -252,7 +252,7 @@ string serialize_offline_add_query(UpdateQueryAdd q) {
 }
 
 UpdateQueryAdd deserialize_offline_add_query(string msg) {
-    cout << "finish2\n";
+    
     interface::OfflineAddQueryShort query;
     if (!query.ParseFromString(msg)) {
         cout << "deserialize offline add query failed\n";

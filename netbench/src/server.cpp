@@ -9,8 +9,6 @@ PIRServer::PIRServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_) {
     dbrange = dbrange_;
     setsize = setsize_;
     nbrsets = nbrsets_;
-
-    // cout << "server is created." << std::endl;
 }
 
 void PIRServer::set_database(Database *db_) {
@@ -20,8 +18,6 @@ void PIRServer::set_database(Database *db_) {
     }
 
     db = db_;
-
-    // cout << "server database is set." << std::endl;
 }
 
 OfflineReply PIRServer::generate_offline_reply(OfflineQuery offline_qry, uint32_t client_id) {
@@ -78,18 +74,21 @@ void PIRServer::add_elements(uint32_t nbr_add, std::vector<Block> v) {
 
     dbrange += nbr_add;
 
-    // std::cout << "server adds " << nbr_add << " elements,"
-    // << " now database has " << (*db).size() << " elements in total" << std::endl;
+    std::cout << "server adds " << nbr_add << " elements,"
+    << " now database has " << (*db).size() << " elements in total" << std::endl;
 }
 
-//Block PIRServer::delete_element(uint32_t idx) {
-//    Block blk = rand()%10000;
-//    return blk ^ (*db)[idx];
-//}
-//
-//Block PIRServer::edit_element(uint32_t idx, Block new_element) {
-//    return new_element ^ (*db)[idx];
-//}
+Block PIRServer::delete_element(uint32_t idx) {
+   Block blk; 
+    for (int i = 0; i < BlockLen; i++) {
+       blk[i] = rand() % 2; 
+    }
+   return blk ^ (*db)[idx];
+}
+
+Block PIRServer::edit_element(uint32_t idx, Block new_element) {
+   return new_element ^ (*db)[idx];
+}
 
 
 OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
@@ -100,9 +99,7 @@ OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
     tmp.parities.resize(nbrsets);
 
     for (int s = 0; s < nbrsets; s++) {
-
         // for each set
-
         // eval PRF to obtain the difference set
 
         Key key = offline_add_qry.diffsets[s].sk;
@@ -111,7 +108,6 @@ OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
         std::vector<std::tuple<uint32_t, uint32_t> > cur = offline_add_qry.diffsets[s].aux_curr;
 
         // compute the difference of all slots except the last
-
         uint32_t kick_slot = prev.size(); // number of slot with indices kicked
         uint32_t accum_range = 0;
 
@@ -132,9 +128,9 @@ OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
             for (uint32_t ell = std::get<1>(cur[i]); ell < std::get<1>(prev[i]); ell++) {
 
                 // DEBUG
-                if (ell == range) {
-                    throw std::invalid_argument("error");
-                }
+                // if (ell == range) {
+                //     throw std::invalid_argument("error");
+                // }
 
                 uint32_t idx = cycle_walk(ell, range, ki);
 
@@ -150,7 +146,6 @@ OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
         }
 
         // compute the last slot
-
         uint32_t new_slot = cur.size() - 1;
         uint32_t last_range = std::get<0>(cur[new_slot]);
 
@@ -167,7 +162,6 @@ OfflineReply PIRServer::batched_addition_reply(UpdateQueryAdd offline_add_qry) {
 
             tmp.parities[s] = tmp.parities[s] ^ (*db)[accum_range + idx];
         }
-
 
     }
 

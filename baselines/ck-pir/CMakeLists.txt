@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(oCK)
+project(CK)
 
 ADD_SUBDIRECTORY(proto)
 
@@ -8,10 +8,10 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_C_FLAGS}  -std=c++14 -O2")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/proto)
 
-add_executable(oCK main.cpp src/pir.hpp src/pir.cpp src/puncprf.hpp src/puncprf.cpp
+add_executable(CK main.cpp src/pir.hpp src/pir.cpp src/puncprf.hpp src/puncprf.cpp
         src/client.hpp src/client.cpp src/server.hpp src/server.cpp)
 
-target_link_libraries(oCK proto ${PROTOBUF_LIBRARY} m ssl crypto pthread)
+target_link_libraries(CK proto ${PROTOBUF_LIBRARY} m ssl crypto pthread)
 
 add_executable(server src/eval_server.cpp src/pir.hpp src/pir.cpp src/puncprf.hpp src/puncprf.cpp
         src/client.hpp src/client.cpp src/server.hpp src/server.cpp)

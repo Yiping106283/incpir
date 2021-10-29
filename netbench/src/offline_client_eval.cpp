@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < offer_load; i++) {
         NetClient client(db_size, set_size, nbr_sets);
         client.offline_query(ip);
-        UpdateQueryAdd add_qry = client.batched_addition_query(nbr_add);
+        UpdateQueryAdd add_qry = client.batched_addition_query(nbr_add); 
         querys[i] = add_qry;
         clients.push_back(client);
     }

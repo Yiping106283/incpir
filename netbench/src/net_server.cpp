@@ -48,9 +48,7 @@ class NetServer : public PIRServer {
     }
 
 public:
-    NetServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_) {
-        PIRServer(dbrange_, setsize_, nbrsets_);
-    }
+    NetServer(uint32_t dbrange_, uint32_t setsize_, uint32_t nbrsets_): PIRServer(dbrange_, setsize_, nbrsets_) {}
 
     void run(Database* db_, string ip, double time_period) {
         set_database(db_);
